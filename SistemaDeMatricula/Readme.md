@@ -1,6 +1,6 @@
 ## Histórias de Usuário
 
-### Aluno 1
+### Aluno 1 
 - Quero me matricular em até 4 disciplinas obrigatórias e 2 optativas
 - Para que eu possa cursar as matérias do semestre.
 
