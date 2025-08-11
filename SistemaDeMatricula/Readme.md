@@ -50,7 +50,7 @@ Consulte o cronograma: [Cronograma no GitHub](https://github.com/joaopauloaramun
 ### Artefatos de análise e design
 - **Diagrama de Caso de Uso**: veja a imagem em `./Documentacao/DiagramaCasoDeUso.jpg`.
 
-  ![Diagrama de Caso de Uso](./Documentacao/DiagramaDeClasse.png)
+  ![Diagrama de Caso de Uso](./Documentacao/DiagramaCasoDeUso.jpg)
 
 - **Histórias de Usuário**: veja `./Documentacao/HistóriaDeUsuario.md`.
 - **Diagrama de Classes**: será adicionado em `./Documentacao/DiagramaDeClasse.png`.
