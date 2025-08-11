@@ -50,10 +50,11 @@ Consulte o cronograma: [Cronograma no GitHub](https://github.com/joaopauloaramun
 ### Artefatos de análise e design
 - **Diagrama de Caso de Uso**: veja a imagem em `./Documentacao/DiagramaCasoDeUso.jpg`.
 
-  ![Diagrama de Caso de Uso](./Documentacao/DiagramaCasoDeUso.jpg)
+  ![Diagrama de Caso de Uso](./Documentacao/DiagramaDeClasse.png)
 
 - **Histórias de Usuário**: veja `./Documentacao/HistóriaDeUsuario.md`.
-- **Diagrama de Classes**: será adicionado em `./Documentacao/` na Sprint 02.
+- **Diagrama de Classes**: será adicionado em `./Documentacao/DiagramaDeClasse.png`.
+  ![Diagrama de Classe](./Documentacao/DiagramaDeClasse.png)
 
 ### Modelo de domínio inicial (proposta)
 - Entidades principais: `Curso`, `Disciplina`, `Aluno`, `Professor`, `Matricula`, `PeriodoDeMatricula`, `Usuario`, `Cobranca`.
@@ -79,7 +80,7 @@ SistemaDeMatricula/
   Documentacao/
     DiagramaCasoDeUso.jpg
     HistóriaDeUsuario.md
-    DiagramaDeClasses.png (Sprint 02)
+    DiagramaDeClasses.png
   src/
     main/java/
       br/ufxx/sistemadematriculas/
