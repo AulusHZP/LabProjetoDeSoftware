@@ -4,58 +4,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Aluno extends Usuario {
-    private String matricula;
-    private List<Disciplina> disciplinasObrigatorias;
-    private List<Disciplina> disciplinasOptativas;
+    String matricula;
+    List<Disciplina> disciplinasObrigatorias = new ArrayList<>();
+    List<Disciplina> disciplinasOptativas = new ArrayList<>();
 
-    public static final int MAX_OBRIGATORIAS = 4;
-    public static final int MAX_OPTATIVAS = 2;
-
-    public Aluno(String nome, String login, String senha, String matricula) {
-        super(nome, login, senha);
-        this.matricula = matricula;
-        this.disciplinasObrigatorias = new ArrayList<>();
-        this.disciplinasOptativas = new ArrayList<>();
-    }
-
-    public boolean matricular(Disciplina disciplina, boolean obrigatorias) {
-        if (obrigatorias) {
-            if (disciplinasObrigatorias.size() >= MAX_OBRIGATORIAS) {
-                System.out.println("Limite de disciplinas obrigatorias atingido!");
-                return false;
+    public void matricular(Disciplina d) {
+        if (d != null && !disciplinasObrigatorias.contains(d) && !disciplinasOptativas.contains(d)) {
+            if (d.obrigatoria) {
+                if (disciplinasObrigatorias.size() < 4) {
+                    disciplinasObrigatorias.add(d);
+                    d.adicionarAluno(this);
+                } else {
+                    System.out.println("Limite de 4 obrigatórias já atingido.");
+                }
+            } else {
+                if (disciplinasOptativas.size() < 2) {
+                    disciplinasOptativas.add(d);
+                    d.adicionarAluno(this);
+                } else {
+                    System.out.println("Limite de 2 optativas já atingido.");
+                }
             }
-            return disciplinasObrigatorias.add(disciplina);
-        }
-        else {
-            if (disciplinasOptativas.size() >= MAX_OPTATIVAS) {
-                System.out.println("Limite de disciplinas optativas atingido!");
-                return false;
-            }
-            return disciplinasOptativas.add(disciplina);
         }
     }
 
-    public boolean cancelarMatricula(Disciplina disciplina) {
-        if(disciplinasObrigatorias.remove(disciplina)) {
-            return true;
+    public void cancelarMatricula(Disciplina d) {
+        if (disciplinasObrigatorias.remove(d) || disciplinasOptativas.remove(d)) {
+            d.removerAluno(this);
         }
-        return disciplinasOptativas.remove(disciplina);
     }
-
-    public String getMatricula() {
-        return matricula;
-    }
-
-    public void setMatricula(String matricula) {
-        this.matricula = matricula;
-    }
-
-    public List<Disciplina> getDisciplinasObrigatorias() {
-        return disciplinasObrigatorias;
-    }
-
-    public List<Disciplina> getDisciplinasOptativas() {
-        return disciplinasOptativas;
-    }
-
 }

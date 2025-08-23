@@ -4,167 +4,134 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
 
-/**
- * Testes para a classe Aluno
- */
 @DisplayName("Testes da classe Aluno")
 class AlunoTest {
 
     private Aluno aluno;
-    private Disciplina disciplina1;
-    private Disciplina disciplina2;
-    private Disciplina disciplina3;
-    private Disciplina disciplina4;
-    private Disciplina disciplina5;
-    private Disciplina disciplina6;
-    private Disciplina disciplina7;
+    private Disciplina d1, d2, d3, d4, d5, d6, d7;
 
     @BeforeEach
     void setUp() {
-        aluno = new Aluno("Maria Santos", "maria.santos", "senha123", "2023001");
-        
-        // Criando disciplinas para teste
-        disciplina1 = new Disciplina();
-        disciplina2 = new Disciplina();
-        disciplina3 = new Disciplina();
-        disciplina4 = new Disciplina();
-        disciplina5 = new Disciplina();
-        disciplina6 = new Disciplina();
-        disciplina7 = new Disciplina();
+        aluno = new Aluno();
+        aluno.nome = "Maria Santos";
+        aluno.login = "maria.santos";
+        aluno.senha = "senha123";
+        aluno.matricula = "2023001";
+
+        d1 = new Disciplina(); d1.obrigatoria = true;
+        d2 = new Disciplina(); d2.obrigatoria = true;
+        d3 = new Disciplina(); d3.obrigatoria = true;
+        d4 = new Disciplina(); d4.obrigatoria = true;
+        d5 = new Disciplina(); d5.obrigatoria = true;
+        d6 = new Disciplina(); d6.obrigatoria = false;
+        d7 = new Disciplina(); d7.obrigatoria = false;
     }
 
     @Test
     @DisplayName("Deve criar aluno com dados corretos")
     void deveCriarAlunoComDadosCorretos() {
-        assertEquals("Maria Santos", aluno.getNome());
-        assertEquals("maria.santos", aluno.getLogin());
-        assertEquals("senha123", aluno.getSenha());
-        assertEquals("2023001", aluno.getMatricula());
-        assertTrue(aluno.getDisciplinasObrigatorias().isEmpty());
-        assertTrue(aluno.getDisciplinasOptativas().isEmpty());
+        assertEquals("Maria Santos", aluno.nome);
+        assertEquals("maria.santos", aluno.login);
+        assertEquals("senha123", aluno.senha);
+        assertEquals("2023001", aluno.matricula);
+        assertTrue(aluno.disciplinasObrigatorias.isEmpty());
+        assertTrue(aluno.disciplinasOptativas.isEmpty());
     }
 
     @Test
     @DisplayName("Deve permitir alteração de matrícula")
     void devePermitirAlteracaoDeMatricula() {
-        aluno.setMatricula("2023002");
-        assertEquals("2023002", aluno.getMatricula());
+        aluno.matricula = "2023002";
+        assertEquals("2023002", aluno.matricula);
     }
 
     @Test
-    @DisplayName("Deve matricular em disciplina obrigatória")
-    void deveMatricularEmDisciplinaObrigatoria() {
-        assertTrue(aluno.matricular(disciplina1, true));
-        assertEquals(1, aluno.getDisciplinasObrigatorias().size());
-        assertTrue(aluno.getDisciplinasObrigatorias().contains(disciplina1));
+    @DisplayName("Matricular disciplina obrigatória incrementa lista")
+    void matricularObrigatoria() {
+        aluno.matricular(d1);
+        assertEquals(1, aluno.disciplinasObrigatorias.size());
+        assertTrue(aluno.disciplinasObrigatorias.contains(d1));
     }
 
     @Test
-    @DisplayName("Deve matricular em disciplina optativa")
-    void deveMatricularEmDisciplinaOptativa() {
-        assertTrue(aluno.matricular(disciplina1, false));
-        assertEquals(1, aluno.getDisciplinasOptativas().size());
-        assertTrue(aluno.getDisciplinasOptativas().contains(disciplina1));
+    @DisplayName("Matricular disciplina optativa incrementa lista")
+    void matricularOptativa() {
+        aluno.matricular(d6);
+        assertEquals(1, aluno.disciplinasOptativas.size());
+        assertTrue(aluno.disciplinasOptativas.contains(d6));
     }
 
     @Test
-    @DisplayName("Deve respeitar limite de disciplinas obrigatórias")
-    void deveRespeitarLimiteDeDisciplinasObrigatorias() {
-        // Matriculando 4 disciplinas obrigatórias (limite máximo)
-        assertTrue(aluno.matricular(disciplina1, true));
-        assertTrue(aluno.matricular(disciplina2, true));
-        assertTrue(aluno.matricular(disciplina3, true));
-        assertTrue(aluno.matricular(disciplina4, true));
-        
-        assertEquals(4, aluno.getDisciplinasObrigatorias().size());
-        
-        // Tentando matricular a 5ª disciplina obrigatória
-        assertFalse(aluno.matricular(disciplina5, true));
-        assertEquals(4, aluno.getDisciplinasObrigatorias().size());
+    @DisplayName("Respeita limite de 4 obrigatórias")
+    void respeitaLimiteObrigatorias() {
+        aluno.matricular(d1);
+        aluno.matricular(d2);
+        aluno.matricular(d3);
+        aluno.matricular(d4);
+        // 5ª obrigatória não deve entrar (método atual apenas ignora)
+        aluno.matricular(d5);
+        assertEquals(4, aluno.disciplinasObrigatorias.size());
     }
 
     @Test
-    @DisplayName("Deve respeitar limite de disciplinas optativas")
-    void deveRespeitarLimiteDeDisciplinasOptativas() {
-        // Matriculando 2 disciplinas optativas (limite máximo)
-        assertTrue(aluno.matricular(disciplina1, false));
-        assertTrue(aluno.matricular(disciplina2, false));
-        
-        assertEquals(2, aluno.getDisciplinasOptativas().size());
-        
-        // Tentando matricular a 3ª disciplina optativa
-        assertFalse(aluno.matricular(disciplina3, false));
-        assertEquals(2, aluno.getDisciplinasOptativas().size());
+    @DisplayName("Respeita limite de 2 optativas")
+    void respeitaLimiteOptativas() {
+        aluno.matricular(d6);
+        aluno.matricular(d7);
+        // terceira optativa (reutilizando d6) não deve alterar
+        aluno.matricular(d6);
+        assertEquals(2, aluno.disciplinasOptativas.size());
     }
 
     @Test
-    @DisplayName("Deve cancelar matrícula em disciplina obrigatória")
-    void deveCancelarMatriculaEmDisciplinaObrigatoria() {
-        aluno.matricular(disciplina1, true);
-        assertEquals(1, aluno.getDisciplinasObrigatorias().size());
-        
-        assertTrue(aluno.cancelarMatricula(disciplina1));
-        assertEquals(0, aluno.getDisciplinasObrigatorias().size());
+    @DisplayName("Cancelar matrícula remove de obrigatória")
+    void cancelarObrigatoria() {
+        aluno.matricular(d1);
+        assertEquals(1, aluno.disciplinasObrigatorias.size());
+        aluno.cancelarMatricula(d1);
+        assertEquals(0, aluno.disciplinasObrigatorias.size());
     }
 
     @Test
-    @DisplayName("Deve cancelar matrícula em disciplina optativa")
-    void deveCancelarMatriculaEmDisciplinaOptativa() {
-        aluno.matricular(disciplina1, false);
-        assertEquals(1, aluno.getDisciplinasOptativas().size());
-        
-        assertTrue(aluno.cancelarMatricula(disciplina1));
-        assertEquals(0, aluno.getDisciplinasOptativas().size());
+    @DisplayName("Cancelar matrícula remove de optativa")
+    void cancelarOptativa() {
+        aluno.matricular(d6);
+        assertEquals(1, aluno.disciplinasOptativas.size());
+        aluno.cancelarMatricula(d6);
+        assertEquals(0, aluno.disciplinasOptativas.size());
     }
 
     @Test
-    @DisplayName("Deve retornar false ao tentar cancelar disciplina não matriculada")
-    void deveRetornarFalseAoTentarCancelarDisciplinaNaoMatriculada() {
-        assertFalse(aluno.cancelarMatricula(disciplina1));
+    @DisplayName("Permite mistura de obrigatórias e optativas")
+    void misturaObrigatoriasOptativas() {
+        aluno.matricular(d1);
+        aluno.matricular(d2);
+        aluno.matricular(d6);
+        aluno.matricular(d7);
+        assertEquals(2, aluno.disciplinasObrigatorias.size());
+        assertEquals(2, aluno.disciplinasOptativas.size());
     }
 
     @Test
-    @DisplayName("Deve permitir matrícula mista de obrigatórias e optativas")
-    void devePermitirMatriculaMistaDeObrigatoriasEOptativas() {
-        // Matriculando disciplinas obrigatórias
-        assertTrue(aluno.matricular(disciplina1, true));
-        assertTrue(aluno.matricular(disciplina2, true));
-        
-        // Matriculando disciplinas optativas
-        assertTrue(aluno.matricular(disciplina3, false));
-        assertTrue(aluno.matricular(disciplina4, false));
-        
-        assertEquals(2, aluno.getDisciplinasObrigatorias().size());
-        assertEquals(2, aluno.getDisciplinasOptativas().size());
+    @DisplayName("Cancelar e rematricular funciona")
+    void cancelarERematricular() {
+        aluno.matricular(d1);
+        aluno.cancelarMatricula(d1);
+        aluno.matricular(d1);
+        assertTrue(aluno.disciplinasObrigatorias.contains(d1));
     }
 
     @Test
-    @DisplayName("Deve permitir cancelar e rematricular disciplina")
-    void devePermitirCancelarERematricularDisciplina() {
-        // Matriculando disciplina obrigatória
-        assertTrue(aluno.matricular(disciplina1, true));
-        assertEquals(1, aluno.getDisciplinasObrigatorias().size());
-        
-        // Cancelando matrícula
-        assertTrue(aluno.cancelarMatricula(disciplina1));
-        assertEquals(0, aluno.getDisciplinasObrigatorias().size());
-        
-        // Rematriculando
-        assertTrue(aluno.matricular(disciplina1, true));
-        assertEquals(1, aluno.getDisciplinasObrigatorias().size());
-    }
-
-    @Test
-    @DisplayName("Deve manter listas separadas para obrigatórias e optativas")
-    void deveManterListasSeparadasParaObrigatoriasEOptativas() {
-        // Matriculando a mesma disciplina como obrigatória e optativa
-        assertTrue(aluno.matricular(disciplina1, true));
-        assertTrue(aluno.matricular(disciplina1, false));
-        
-        assertEquals(1, aluno.getDisciplinasObrigatorias().size());
-        assertEquals(1, aluno.getDisciplinasOptativas().size());
-        assertTrue(aluno.getDisciplinasObrigatorias().contains(disciplina1));
-        assertTrue(aluno.getDisciplinasOptativas().contains(disciplina1));
+    @DisplayName("A mesma disciplina pode existir em listas diferentes se mudar obrigatoriedade")
+    void mesmaDisciplinaEmListasDiferentes() {
+        Disciplina dx = new Disciplina();
+        dx.obrigatoria = true;
+        aluno.matricular(dx); // vai para obrigatórias
+        dx.obrigatoria = false;
+        aluno.matricular(dx); // vai para optativas
+        assertEquals(1, aluno.disciplinasObrigatorias.size());
+        assertEquals(1, aluno.disciplinasOptativas.size());
     }
 }

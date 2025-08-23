@@ -1,28 +1,34 @@
 package org.example;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Disciplina {
-    private String codigo;
-    private String nome;
-    private int creditos;
-    private Professor professor;
-    private List<Aluno> alunos;
-    private int maxAlunos = 60;
-    private boolean ativa;
+    String codigo;
+    String nome;
+    int creditos;
+    Professor professor;
+    List<Aluno> alunos = new ArrayList<>();
+    int maxAlunos = 60;
+    boolean ativa;
+    boolean obrigatoria;
 
     public boolean adicionarAluno(Aluno a) {
-        // TODO: implementar regra para adicionar aluno
+        if (alunos.size() < maxAlunos && !alunos.contains(a)) {
+            return alunos.add(a);
+        }
         return false;
     }
 
     public boolean removerAluno(Aluno a) {
-        // TODO: implementar regra para remover aluno
-        return false;
+        return alunos.remove(a);
     }
 
     public void verificarAtivacao() {
-        // TODO: implementar verificação de ativação da disciplina
+        this.ativa = alunos.size() >= 3;
+        if (!ativa) {
+            alunos.clear();
+        }
     }
 }
 

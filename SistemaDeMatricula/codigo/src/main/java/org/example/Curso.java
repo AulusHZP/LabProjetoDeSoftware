@@ -1,13 +1,16 @@
 package org.example;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Curso {
-    private String nome;
-    private int creditos;
-    private List<Disciplina> disciplinas;
+    String nome;
+    int creditos;
+    List<Disciplina> disciplinas = new ArrayList<>();
 
     public void adicionarDisciplina(Disciplina d) {
-        // TODO: implementar inclusão de disciplina no curso
+        if (d != null && !disciplinas.contains(d)) {
+            disciplinas.add(d);
+        }
     }
 }

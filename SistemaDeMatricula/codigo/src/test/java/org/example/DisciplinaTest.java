@@ -5,93 +5,65 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Testes para a classe Disciplina
- */
 @DisplayName("Testes da classe Disciplina")
 class DisciplinaTest {
 
     private Disciplina disciplina;
-    private Aluno aluno1;
-    private Aluno aluno2;
-    private Professor professor;
+    private Aluno a1, a2;
+    private Professor p;
 
     @BeforeEach
     void setUp() {
         disciplina = new Disciplina();
-        aluno1 = new Aluno("João Silva", "joao.silva", "senha123", "2023001");
-        aluno2 = new Aluno("Maria Santos", "maria.santos", "senha456", "2023002");
-        professor = new Professor("Dr. Carlos Oliveira", "carlos.oliveira", "senha789");
+        a1 = new Aluno(); a1.matricula = "2023001";
+        a2 = new Aluno(); a2.matricula = "2023002";
+        p = new Professor(); p.nome = "Dr. Carlos";
     }
 
     @Test
-    @DisplayName("Deve criar disciplina com valores padrão")
-    void deveCriarDisciplinaComValoresPadrao() {
-        // Como não há construtor implementado, testamos o comportamento padrão
+    @DisplayName("Cria disciplina com valores padrão")
+    void criaDisciplina() {
         assertNotNull(disciplina);
+        assertFalse(disciplina.ativa);
+        assertEquals(0, disciplina.alunos.size());
+        assertEquals(60, disciplina.maxAlunos);
     }
 
     @Test
-    @DisplayName("Deve retornar false ao adicionar aluno (implementação atual)")
-    void deveRetornarFalseAoAdicionarAluno() {
-        // Com a implementação atual (TODO), sempre retorna false
-        assertFalse(disciplina.adicionarAluno(aluno1));
-        assertFalse(disciplina.adicionarAluno(aluno2));
+    @DisplayName("Adicionar aluno respeita limite e evita duplicatas")
+    void adicionarAluno() {
+        assertTrue(disciplina.adicionarAluno(a1));
+        assertFalse(disciplina.adicionarAluno(a1)); // duplicado
+        assertTrue(disciplina.adicionarAluno(a2));
+        assertEquals(2, disciplina.alunos.size());
     }
 
     @Test
-    @DisplayName("Deve retornar false ao remover aluno (implementação atual)")
-    void deveRetornarFalseAoRemoverAluno() {
-        // Com a implementação atual (TODO), sempre retorna false
-        assertFalse(disciplina.removerAluno(aluno1));
+    @DisplayName("Remover aluno funciona e lida com nulos")
+    void removerAluno() {
+        disciplina.adicionarAluno(a1);
+        assertTrue(disciplina.removerAluno(a1));
+        assertFalse(disciplina.removerAluno(a1)); // já removido
         assertFalse(disciplina.removerAluno(null));
     }
 
     @Test
-    @DisplayName("Deve executar verificarAtivacao sem erro")
-    void deveExecutarVerificarAtivacaoSemErro() {
-        // Testa se o método executa sem exceção
-        assertDoesNotThrow(() -> disciplina.verificarAtivacao());
-    }
+    @DisplayName("verificarAtivacao ativa com >=3 alunos; senão limpa alunos")
+    void verificarAtivacaoRegra() {
+        Aluno a3 = new Aluno();
+        disciplina.adicionarAluno(a1);
+        disciplina.adicionarAluno(a2);
+        disciplina.verificarAtivacao();
+        assertFalse(disciplina.ativa);
+        assertEquals(0, disciplina.alunos.size());
 
-    @Test
-    @DisplayName("Deve lidar com aluno nulo em adicionarAluno")
-    void deveLidarComAlunoNuloEmAdicionarAluno() {
-        assertFalse(disciplina.adicionarAluno(null));
-    }
-
-    @Test
-    @DisplayName("Deve lidar com aluno nulo em removerAluno")
-    void deveLidarComAlunoNuloEmRemoverAluno() {
-        assertFalse(disciplina.removerAluno(null));
-    }
-
-    @Test
-    @DisplayName("Deve manter consistência entre adicionar e remover")
-    void deveManterConsistenciaEntreAdicionarERemover() {
-        // Com a implementação atual, ambos retornam false
-        assertFalse(disciplina.adicionarAluno(aluno1));
-        assertFalse(disciplina.removerAluno(aluno1));
-    }
-
-    @Test
-    @DisplayName("Deve permitir múltiplas chamadas de verificarAtivacao")
-    void devePermitirMultiplasChamadasDeVerificarAtivacao() {
-        assertDoesNotThrow(() -> {
-            disciplina.verificarAtivacao();
-            disciplina.verificarAtivacao();
-            disciplina.verificarAtivacao();
-        });
-    }
-
-    @Test
-    @DisplayName("Deve lidar com operações em sequência")
-    void deveLidarComOperacoesEmSequencia() {
-        // Testa uma sequência de operações
-        assertFalse(disciplina.adicionarAluno(aluno1));
-        assertFalse(disciplina.adicionarAluno(aluno2));
-        assertFalse(disciplina.removerAluno(aluno1));
-        assertFalse(disciplina.removerAluno(aluno2));
-        assertDoesNotThrow(() -> disciplina.verificarAtivacao());
+        // adicionar 3 alunos e ativar
+        disciplina.adicionarAluno(a1);
+        disciplina.adicionarAluno(a2);
+        disciplina.adicionarAluno(a3);
+        disciplina.verificarAtivacao();
+        assertTrue(disciplina.ativa);
+        assertEquals(3, disciplina.alunos.size());
     }
 }
+
