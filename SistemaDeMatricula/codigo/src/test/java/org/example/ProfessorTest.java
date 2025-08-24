@@ -50,21 +50,25 @@ class ProfessorTest {
     }
 
     @Test
-    @DisplayName("Remover disciplina ministrada")
-    void removerDisciplina() {
+    @DisplayName("Não permite adicionar disciplina duplicada")
+    void naoPermiteDisciplinaDuplicada() {
         professor.adicionarDisciplina(d1);
-        professor.adicionarDisciplina(d2);
-        assertTrue(professor.removerDisciplina(d1));
-        assertFalse(professor.disciplinasMinistradas.contains(d1));
-        assertTrue(professor.disciplinasMinistradas.contains(d2));
+        professor.adicionarDisciplina(d1); // tentativa de adicionar a mesma disciplina
+        assertEquals(1, professor.disciplinasMinistradas.size());
     }
 
     @Test
-    @DisplayName("Lida com nulos")
-    void lidaComNulos() {
-        assertFalse(professor.removerDisciplina(null));
-        professor.adicionarDisciplina(null); // não deve lançar
-        assertTrue(true);
+    @DisplayName("Lida com disciplina nula")
+    void lidaComDisciplinaNula() {
+        professor.adicionarDisciplina(null); // não deve lançar exceção
+        assertEquals(0, professor.disciplinasMinistradas.size());
+    }
+
+    @Test
+    @DisplayName("Estabelece relação bidirecional com disciplina")
+    void estabeleceRelacaoBidirecional() {
+        professor.adicionarDisciplina(d1);
+        assertEquals(professor, d1.professor);
     }
 }
 

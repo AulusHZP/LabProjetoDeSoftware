@@ -25,23 +25,45 @@ class CursoTest {
     }
 
     @Test
-    @DisplayName("adicionarDisciplina executa sem erro")
-    void adicionarDisciplinaSemErro() {
-        assertDoesNotThrow(() -> curso.adicionarDisciplina(d1));
+    @DisplayName("Deve adicionar disciplina corretamente")
+    void deveAdicionarDisciplina() {
+        curso.adicionarDisciplina(d1);
+        assertEquals(1, curso.disciplinas.size());
+        assertTrue(curso.disciplinas.contains(d1));
     }
 
     @Test
-    @DisplayName("Permite adicionar múltiplas disciplinas")
-    void multipasDisciplinas() {
-        assertDoesNotThrow(() -> {
-            curso.adicionarDisciplina(d1);
-            curso.adicionarDisciplina(d2);
-        });
+    @DisplayName("Deve adicionar múltiplas disciplinas")
+    void deveAdicionarMultiplasDisciplinas() {
+        curso.adicionarDisciplina(d1);
+        curso.adicionarDisciplina(d2);
+        assertEquals(2, curso.disciplinas.size());
+        assertTrue(curso.disciplinas.contains(d1));
+        assertTrue(curso.disciplinas.contains(d2));
     }
 
     @Test
-    @DisplayName("Aceita nulo sem lançar exceção")
-    void aceitaNulo() {
-        assertDoesNotThrow(() -> curso.adicionarDisciplina(null));
+    @DisplayName("Não deve adicionar disciplina duplicada")
+    void naoDeveAdicionarDisciplinaDuplicada() {
+        curso.adicionarDisciplina(d1);
+        curso.adicionarDisciplina(d1);
+        assertEquals(1, curso.disciplinas.size());
+    }
+
+    @Test
+    @DisplayName("Deve lidar com disciplina nula")
+    void deveLidarComDisciplinaNula() {
+        curso.adicionarDisciplina(null);
+        assertEquals(0, curso.disciplinas.size());
+    }
+
+    @Test
+    @DisplayName("Deve permitir configuração de nome e créditos")
+    void devePermitirConfiguracaoDeNomeECreditos() {
+        curso.nome = "Ciência da Computação";
+        curso.creditos = 240;
+        
+        assertEquals("Ciência da Computação", curso.nome);
+        assertEquals(240, curso.creditos);
     }
 }

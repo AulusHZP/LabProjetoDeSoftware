@@ -65,5 +65,46 @@ class DisciplinaTest {
         assertTrue(disciplina.ativa);
         assertEquals(3, disciplina.alunos.size());
     }
+
+    @Test
+    @DisplayName("Deve permitir configuração de propriedades")
+    void devePermitirConfiguracaoDePropriedades() {
+        disciplina.codigo = "MAT001";
+        disciplina.nome = "Matemática";
+        disciplina.creditos = 4;
+        disciplina.maxAlunos = 30;
+        disciplina.obrigatoria = true;
+        
+        assertEquals("MAT001", disciplina.codigo);
+        assertEquals("Matemática", disciplina.nome);
+        assertEquals(4, disciplina.creditos);
+        assertEquals(30, disciplina.maxAlunos);
+        assertTrue(disciplina.obrigatoria);
+    }
+
+    @Test
+    @DisplayName("Deve respeitar limite máximo de alunos")
+    void deveRespeitarLimiteMaximoDeAlunos() {
+        disciplina.maxAlunos = 2;
+        assertTrue(disciplina.adicionarAluno(a1));
+        assertTrue(disciplina.adicionarAluno(a2));
+        
+        Aluno a3 = new Aluno();
+        assertFalse(disciplina.adicionarAluno(a3));
+        assertEquals(2, disciplina.alunos.size());
+    }
+
+    @Test
+    @DisplayName("Deve lidar com aluno nulo na adição")
+    void deveLidarComAlunoNuloNaAdicao() {
+        assertFalse(disciplina.adicionarAluno(null));
+        assertEquals(0, disciplina.alunos.size());
+    }
+
+    @Test
+    @DisplayName("Deve lidar com aluno nulo na remoção")
+    void deveLidarComAlunoNuloNaRemocao() {
+        assertFalse(disciplina.removerAluno(null));
+    }
 }
 
