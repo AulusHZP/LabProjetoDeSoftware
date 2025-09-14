@@ -1,0 +1,11 @@
+org\example\Application.class
+org\example\controller\ClienteController$SuccessResponse.class
+org\example\repository\ClienteRepository.class
+org\example\controller\ClienteController.class
+org\example\controller\ClienteController$LoginRequest.class
+org\example\model\Cliente.class
+org\example\service\ClienteService.class
+org\example\controller\ClienteController$ErrorResponse.class
+org\example\controller\ClienteController$EstatisticasResponse.class
+org\example\controller\WebController.class
+org\example\controller\ClienteController$LoginResponse.class

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Aluguel de Carros - Gerenciamento de Clientes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .btn-action {
+            margin: 2px;
+        }
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .status-ativo {
+            color: #28a745;
+        }
+        .status-inativo {
+            color: #dc3545;
+        }
+        .loading {
+            display: none;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+        }
+        .success-message {
+            color: #28a745;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-car"></i> Sistema de Aluguel de Carros
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <i class="fas fa-user"></i> Gerenciamento de Clientes
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">
+                            <i class="fas fa-users"></i> Total de Clientes
+                        </h5>
+                        <h3 class="text-primary" id="totalClientes">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-success">
+                            <i class="fas fa-user-check"></i> Clientes Ativos
+                        </h5>
+                        <h3 class="text-success" id="clientesAtivos">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-danger">
+                            <i class="fas fa-user-times"></i> Clientes Inativos
+                        </h5>
+                        <h3 class="text-danger" id="clientesInativos">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCliente">
+                    <i class="fas fa-plus"></i> Novo Cliente
+                </button>
+                <button class="btn btn-primary" onclick="carregarClientes()">
+                    <i class="fas fa-sync-alt"></i> Atualizar
+                </button>
+                <div class="btn-group">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="filtrarClientes('todos')">Todos</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filtrarClientes('ativos')">Apenas Ativos</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filtrarClientes('inativos')">Apenas Inativos</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Pesquisa -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="pesquisaNome" placeholder="Pesquisar por nome...">
+                    <button class="btn btn-outline-secondary" onclick="pesquisarPorNome()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="pesquisaCidade" placeholder="Filtrar por cidade...">
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="pesquisaEstado" placeholder="Filtrar por estado...">
+            </div>
+        </div>
+
+        <!-- Tabela de Clientes -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i> Lista de Clientes
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="loading text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tabelaClientes">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>CPF</th>
+                                <th>Telefone</th>
+                                <th>Cidade</th>
+                                <th>Estado</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabela">
+                            <!-- Dados carregados via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Cadastro/Edição de Cliente -->
+    <div class="modal fade" id="modalCliente" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tituloModal">Novo Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formCliente">
+                        <input type="hidden" id="clienteId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nome" class="form-label">Nome *</label>
+                                    <input type="text" class="form-control" id="nome" required>
+                                    <div class="error-message" id="erroNome"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" required>
+                                    <div class="error-message" id="erroEmail"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="senha" class="form-label">Senha *</label>
+                                    <input type="password" class="form-control" id="senha" required>
+                                    <div class="error-message" id="erroSenha"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cpf" class="form-label">CPF *</label>
+                                    <input type="text" class="form-control" id="cpf" maxlength="11" required>
+                                    <div class="error-message" id="erroCpf"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="telefone" class="form-label">Telefone *</label>
+                                    <input type="text" class="form-control" id="telefone" maxlength="11" required>
+                                    <div class="error-message" id="erroTelefone"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dataNascimento" class="form-label">Data de Nascimento *</label>
+                                    <input type="date" class="form-control" id="dataNascimento" required>
+                                    <div class="error-message" id="erroDataNascimento"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endereco" class="form-label">Endereço *</label>
+                            <input type="text" class="form-control" id="endereco" required>
+                            <div class="error-message" id="erroEndereco"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="cidade" class="form-label">Cidade *</label>
+                                    <input type="text" class="form-control" id="cidade" required>
+                                    <div class="error-message" id="erroCidade"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="estado" class="form-label">Estado *</label>
+                                    <input type="text" class="form-control" id="estado" maxlength="2" required>
+                                    <div class="error-message" id="erroEstado"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="cep" class="form-label">CEP *</label>
+                                    <input type="text" class="form-control" id="cep" maxlength="8" required>
+                                    <div class="error-message" id="erroCep"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarCliente()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Login -->
+    <div class="modal fade" id="modalLogin" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Login do Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formLogin">
+                        <div class="mb-3">
+                            <label for="loginEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="loginEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginSenha" class="form-label">Senha</label>
+                            <input type="password" class="form-control" id="loginSenha" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="fazerLogin()">Entrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="cliente.js"></script>
+</body>
+</html>
