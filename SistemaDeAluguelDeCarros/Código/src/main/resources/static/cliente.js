@@ -28,6 +28,60 @@ document.addEventListener('DOMContentLoaded', function() {
             filtrarPorEstado();
         }
     });
+
+    // Máscaras/normalizações de entrada e limites
+    const cpfInput = document.getElementById('cpf');
+    const telInput = document.getElementById('telefone');
+    const cepInput = document.getElementById('cep');
+    const ufInput = document.getElementById('estado');
+
+    if (cpfInput) {
+        cpfInput.setAttribute('maxlength', '14'); // com pontuação
+        cpfInput.addEventListener('input', () => {
+            const digits = cpfInput.value.replace(/\D/g, '').slice(0, 11);
+            cpfInput.value = digits.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, (m, a, b, c, d) => d ? `${a}.${b}.${c}-${d}` : `${a}.${b}.${c}`);
+        });
+    }
+
+    if (telInput) {
+        telInput.setAttribute('maxlength', '15');
+        telInput.addEventListener('input', () => {
+            const digits = telInput.value.replace(/\D/g, '').slice(0, 11);
+            if (digits.length > 10) {
+                telInput.value = digits.replace(/(\d{2})(\d{5})(\d{0,4})/, (m, a, b, c) => c ? `(${a}) ${b}-${c}` : `(${a}) ${b}`);
+            } else {
+                telInput.value = digits.replace(/(\d{2})(\d{0,4})(\d{0,4})/, (m, a, b, c) => c ? `(${a}) ${b}-${c}` : b ? `(${a}) ${b}` : `(${a}`);
+            }
+        });
+    }
+
+    if (cepInput) {
+        cepInput.setAttribute('maxlength', '9');
+        cepInput.addEventListener('input', () => {
+            const digits = cepInput.value.replace(/\D/g, '').slice(0, 8);
+            cepInput.value = digits.replace(/(\d{5})(\d{0,3})/, (m, a, b) => b ? `${a}-${b}` : a);
+        });
+    }
+
+    if (ufInput) {
+        ufInput.setAttribute('maxlength', '2');
+        ufInput.addEventListener('input', () => {
+            ufInput.value = (ufInput.value || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+        });
+    }
+
+    // Listeners explícitos para os botões (caso o HTML não use onclick)
+    const btnBuscarNome = document.getElementById('btnBuscarNome');
+    if (btnBuscarNome) btnBuscarNome.addEventListener('click', pesquisarPorNome);
+
+    const btnFiltrarCidade = document.getElementById('btnFiltrarCidade');
+    if (btnFiltrarCidade) btnFiltrarCidade.addEventListener('click', filtrarPorCidade);
+
+    const btnFiltrarEstado = document.getElementById('btnFiltrarEstado');
+    if (btnFiltrarEstado) btnFiltrarEstado.addEventListener('click', filtrarPorEstado);
+
+    const btnLimpar = document.getElementById('btnLimparFiltros');
+    if (btnLimpar) btnLimpar.addEventListener('click', limparFiltros);
 });
 
 // Carregar lista de clientes
@@ -283,18 +337,19 @@ async function salvarCliente() {
     const clienteId = document.getElementById('clienteId').value;
     const isEdicao = clienteId !== '';
     
-    const cliente = {
-        nome: document.getElementById('nome').value,
-        email: document.getElementById('email').value,
-        cpf: document.getElementById('cpf').value,
-        telefone: document.getElementById('telefone').value,
-        dataNascimento: document.getElementById('dataNascimento').value,
-        endereco: document.getElementById('endereco').value,
-        cidade: document.getElementById('cidade').value,
-        estado: document.getElementById('estado').value,
-        cep: document.getElementById('cep').value,
-        senha: document.getElementById('senha').value
-    };
+    // Sanitização e normalização para cumprir validações do backend
+    const nome = document.getElementById('nome').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const cpf = document.getElementById('cpf').value.replace(/\D/g, '');
+    const telefone = document.getElementById('telefone').value.replace(/\D/g, '');
+    const dataNascimento = document.getElementById('dataNascimento').value.trim();
+    const endereco = document.getElementById('endereco').value.trim();
+    const cidade = document.getElementById('cidade').value.trim();
+    const estado = (document.getElementById('estado').value || '').trim().toUpperCase().slice(0, 2);
+    const cep = document.getElementById('cep').value.replace(/\D/g, '');
+    const senha = document.getElementById('senha').value;
+
+    const cliente = { nome, email, cpf, telefone, dataNascimento, endereco, cidade, estado, cep, senha };
     
     try {
         mostrarLoading(true);
@@ -311,8 +366,21 @@ async function salvarCliente() {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Erro ao salvar cliente');
+            // Tentar extrair mensagem de erro do backend
+            let errorMessage = 'Erro ao salvar cliente';
+            try {
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || JSON.stringify(errorData);
+                } else {
+                    const text = await response.text();
+                    if (text) errorMessage = text;
+                }
+            } catch (_) {
+                // ignora parse fail
+            }
+            throw new Error(errorMessage);
         }
         
         const clienteSalvo = await response.json();
@@ -433,10 +501,14 @@ function validarFormulario() {
         valido = false;
     }
     
-    // Validar telefone
+    // Validar telefone (contando apenas dígitos)
     const telefone = document.getElementById('telefone').value.trim();
+    const telefoneDigits = telefone.replace(/\D/g, '');
     if (!telefone) {
         mostrarErro('telefone', 'Telefone é obrigatório');
+        valido = false;
+    } else if (!(telefoneDigits.length === 10 || telefoneDigits.length === 11)) {
+        mostrarErro('telefone', 'Telefone deve ter 10 ou 11 dígitos');
         valido = false;
     }
     
@@ -466,12 +538,19 @@ function validarFormulario() {
     if (!estado) {
         mostrarErro('estado', 'Estado é obrigatório');
         valido = false;
+    } else if (estado.length !== 2) {
+        mostrarErro('estado', 'Estado deve ter exatamente 2 letras');
+        valido = false;
     }
     
-    // Validar CEP
+    // Validar CEP (contando apenas dígitos)
     const cep = document.getElementById('cep').value.trim();
+    const cepDigits = cep.replace(/\D/g, '');
     if (!cep) {
         mostrarErro('cep', 'CEP é obrigatório');
+        valido = false;
+    } else if (cepDigits.length !== 8) {
+        mostrarErro('cep', 'CEP deve ter exatamente 8 dígitos');
         valido = false;
     }
     
@@ -513,7 +592,22 @@ function limparErros() {
 function mostrarMensagem(mensagem, tipo) {
     const container = document.getElementById('mensagemContainer');
     const texto = document.getElementById('mensagemTexto');
-    
+    // Se a página atual não possui os elementos de mensagem, fazer fallback
+    if (!container || !texto) {
+        // Fallback simples conforme severidade
+        if (tipo === 'error' || tipo === 'danger') {
+            console.error(mensagem);
+            alert(`Erro: ${mensagem}`);
+        } else if (tipo === 'warning') {
+            console.warn(mensagem);
+            alert(`Aviso: ${mensagem}`);
+        } else {
+            console.log(mensagem);
+            alert(mensagem);
+        }
+        return;
+    }
+
     container.className = `alert alert-${tipo} alert-dismissible fade show`;
     texto.textContent = mensagem;
     
