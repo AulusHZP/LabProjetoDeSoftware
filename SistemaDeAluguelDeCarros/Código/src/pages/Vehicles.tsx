@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,148 +21,77 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { AutomovelService, Automovel } from "@/services/api";
 
 const Vehicles = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Mock user type - in real app this would come from context
   const userType = "agente"; // "cliente" or "agente" - only agents can add vehicles
 
+  // Fetch vehicles from API
+  const { data: vehicles = [], isLoading, error } = useQuery({
+    queryKey: ['vehicles'],
+    queryFn: AutomovelService.getAll,
+  });
+
   // New vehicle form data
   const [newVehicleData, setNewVehicleData] = useState({
+    matricula: "",
     marca: "",
     modelo: "", 
     ano: "",
     placa: "",
-    categoria: "",
-    preco: "",
-    combustivel: "",
-    passageiros: "5",
-    cambio: "",
-    caracteristicas: ""
+    proprietario: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Validation schema
   const vehicleSchema = z.object({
+    matricula: z.string().min(2, "Matrícula deve ter pelo menos 2 caracteres").max(50, "Matrícula muito longa"),
     marca: z.string().min(2, "Marca deve ter pelo menos 2 caracteres").max(50, "Marca muito longa"),
     modelo: z.string().min(2, "Modelo deve ter pelo menos 2 caracteres").max(50, "Modelo muito longo"),
     ano: z.string().regex(/^\d{4}$/, "Ano deve ter 4 dígitos"),
     placa: z.string().regex(/^[A-Z]{3}\d[A-Z]\d{2}$|^[A-Z]{3}-?\d{4}$/, "Formato de placa inválido"),
-    categoria: z.string().min(1, "Selecione uma categoria"),
-    preco: z.string().min(1, "Preço é obrigatório"),
-    combustivel: z.string().min(1, "Selecione o combustível"),
-    passageiros: z.string().min(1, "Número de passageiros obrigatório"),
-    cambio: z.string().min(1, "Selecione o tipo de câmbio"),
-    caracteristicas: z.string().optional()
+    proprietario: z.string().min(2, "Proprietário é obrigatório").max(255, "Nome do proprietário muito longo"),
   });
 
-  // Mock vehicle data
-  const vehicles = [
-    {
-      id: "VEH-001",
-      matricula: "ABC-1234",
-      marca: "Honda",
-      modelo: "Civic",
-      ano: 2023,
-      placa: "ABC1D23",
-      categoria: "sedan",
-      preco: 2500,
-      combustivel: "flex",
-      passageiros: 5,
-      cambio: "automático",
-      disponivel: true,
-      imagem: "/placeholder.svg",
-      caracteristicas: ["Ar condicionado", "GPS", "Bluetooth", "Câmera de ré"]
+  // Create vehicle mutation
+  const createVehicleMutation = useMutation({
+    mutationFn: AutomovelService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast({
+        title: "Veículo adicionado com sucesso!",
+        description: "O novo veículo foi cadastrado na frota.",
+      });
+      setNewVehicleData({
+        matricula: "",
+        marca: "",
+        modelo: "", 
+        ano: "",
+        placa: "",
+        proprietario: "",
+      });
+      setIsAddModalOpen(false);
     },
-    {
-      id: "VEH-002", 
-      matricula: "DEF-5678",
-      marca: "Toyota",
-      modelo: "Corolla",
-      ano: 2022,
-      placa: "DEF5G78",
-      categoria: "sedan",
-      preco: 2200,
-      combustivel: "flex",
-      passageiros: 5,
-      cambio: "manual",
-      disponivel: true,
-      imagem: "/placeholder.svg",
-      caracteristicas: ["Ar condicionado", "GPS", "Bluetooth"]
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao adicionar veículo",
+        description: error.message,
+        variant: "destructive",
+      });
     },
-    {
-      id: "VEH-003",
-      matricula: "GHI-9012",
-      marca: "Volkswagen", 
-      modelo: "T-Cross",
-      ano: 2023,
-      placa: "GHI9J12",
-      categoria: "suv",
-      preco: 3200,
-      combustivel: "flex",
-      passageiros: 5,
-      cambio: "automático",
-      disponivel: false,
-      imagem: "/placeholder.svg",
-      caracteristicas: ["Ar condicionado", "GPS", "Bluetooth", "Teto solar", "Rodas de liga"]
-    },
-    {
-      id: "VEH-004",
-      matricula: "JKL-3456",
-      marca: "Chevrolet",
-      modelo: "Onix",
-      ano: 2022,
-      placa: "JKL3M56",
-      categoria: "hatch",
-      preco: 1800,
-      combustivel: "flex",
-      passageiros: 5,
-      cambio: "manual",
-      disponivel: true,
-      imagem: "/placeholder.svg",
-      caracteristicas: ["Ar condicionado", "GPS"]
-    },
-    {
-      id: "VEH-005",
-      matricula: "MNO-7890",
-      marca: "Ford",
-      modelo: "EcoSport",
-      ano: 2021,
-      placa: "MNO7P90",
-      categoria: "suv",
-      preco: 2800,
-      combustivel: "flex",
-      passageiros: 5,
-      cambio: "automático",
-      disponivel: true,
-      imagem: "/placeholder.svg",
-      caracteristicas: ["Ar condicionado", "GPS", "Bluetooth", "Câmera de ré"]
-    },
-    {
-      id: "VEH-006",
-      matricula: "PQR-1234",
-      marca: "Hyundai",
-      modelo: "HB20",
-      ano: 2023,
-      placa: "PQR1S34",
-      categoria: "hatch",
-      preco: 1950,
-      combustivel: "flex",
-      passageiros: 5,
-      cambio: "manual",
-      disponivel: true,
-      imagem: "/placeholder.svg",
-      caracteristicas: ["Ar condicionado", "Bluetooth"]
-    }
-  ];
+  });
 
   const categories = [
     { value: "all", label: "Todas as Categorias" },
@@ -182,13 +111,13 @@ const Vehicles = () => {
   ];
 
   // Filter vehicles based on search and filters
-  const filteredVehicles = vehicles.filter(vehicle => {
+  const filteredVehicles = vehicles.filter((vehicle: Automovel) => {
     const matchesSearch = 
       vehicle.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.placa.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = selectedCategory === "all" || vehicle.categoria === selectedCategory;
+    const matchesCategory = selectedCategory === "all"; // Remove category filter for now since API doesn't have it
     const matchesBrand = selectedBrand === "all" || vehicle.marca === selectedBrand;
 
     return matchesSearch && matchesCategory && matchesBrand;
@@ -239,41 +168,7 @@ const Vehicles = () => {
       return;
     }
     
-    setIsLoading(true);
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Veículo adicionado com sucesso!",
-        description: "O novo veículo foi cadastrado na frota.",
-      });
-      
-      // Reset form
-      setNewVehicleData({
-        marca: "",
-        modelo: "", 
-        ano: "",
-        placa: "",
-        categoria: "",
-        preco: "",
-        combustivel: "",
-        passageiros: "5",
-        cambio: "",
-        caracteristicas: ""
-      });
-      
-      setIsAddModalOpen(false);
-    } catch (error) {
-      toast({
-        title: "Erro ao adicionar veículo",
-        description: "Ocorreu um erro. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    createVehicleMutation.mutate(newVehicleData);
   };
 
   return (
@@ -370,93 +265,77 @@ const Vehicles = () => {
 
       {/* Vehicles Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredVehicles.map((vehicle) => (
-          <Card key={vehicle.id} className="card-hover group">
-            <CardContent className="p-5">
-              {/* Vehicle Title */}
-              <div className="mb-4">
-                <h3 className="text-xl font-bold">
-                  {vehicle.marca} {vehicle.modelo}
-                </h3>
-                <p className="text-muted-foreground">
-                  {vehicle.ano} • Placa: {vehicle.placa}
-                </p>
-              </div>
-
-              {/* Vehicle Specs */}
-              <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>{vehicle.ano}</span>
+        {isLoading ? (
+          <div className="col-span-full text-center py-8">
+            <p className="text-muted-foreground">Carregando veículos...</p>
+          </div>
+        ) : error ? (
+          <div className="col-span-full text-center py-8">
+            <p className="text-destructive">Erro ao carregar veículos</p>
+          </div>
+        ) : (
+          filteredVehicles.map((vehicle: Automovel) => (
+            <Card key={vehicle.id} className="card-hover group">
+              <CardContent className="p-5">
+                {/* Vehicle Title */}
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold">
+                    {vehicle.marca} {vehicle.modelo}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {vehicle.ano} • Placa: {vehicle.placa}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Matrícula: {vehicle.matricula}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Fuel className="w-4 h-4 text-muted-foreground" />
-                  <span className="capitalize">{vehicle.combustivel}</span>
+
+                {/* Vehicle Specs */}
+                <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <span>{vehicle.ano}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Fuel className="w-4 h-4 text-muted-foreground" />
+                    <span>Disponível</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span>Aluguel</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <span>{vehicle.passageiros} pessoas</span>
+
+                {/* Proprietário */}
+                <div className="flex items-center gap-2 mb-4 text-sm">
+                  <Cog className="w-4 h-4 text-muted-foreground" />
+                  <span>Proprietário: {vehicle.proprietario}</span>
                 </div>
-              </div>
 
-              {/* Transmission */}
-              <div className="flex items-center gap-2 mb-4 text-sm">
-                <Cog className="w-4 h-4 text-muted-foreground" />
-                <span className="capitalize">{vehicle.cambio}</span>
-                <Badge variant="outline" className="ml-auto text-xs">
-                  {vehicle.categoria.toUpperCase()}
-                </Badge>
-              </div>
-
-              {/* Features */}
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Características:</p>
-                <div className="flex flex-wrap gap-1">
-                  {vehicle.caracteristicas.slice(0, 3).map((feature, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {feature}
-                    </Badge>
-                  ))}
-                  {vehicle.caracteristicas.length > 3 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{vehicle.caracteristicas.length - 3}
-                    </Badge>
-                  )}
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate(`/veiculos/${vehicle.id}`, { state: { vehicle } })}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Detalhes
+                  </Button>
+                  <Button 
+                    className="flex-1 btn-primary"
+                    size="sm"
+                    onClick={() => handleRentRequest(vehicle.id.toString())}
+                  >
+                    <Car className="w-4 h-4 mr-2" />
+                    Solicitar
+                  </Button>
                 </div>
-              </div>
-
-              {/* Price */}
-              <div className="mb-4">
-                <p className="text-2xl font-bold text-primary">
-                  R$ {vehicle.preco.toLocaleString()}
-                  <span className="text-sm font-normal text-muted-foreground">/mês</span>
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1"
-                  onClick={() => navigate(`/veiculos/${vehicle.id}`, { state: { vehicle } })}
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Detalhes
-                </Button>
-                <Button 
-                  className={`flex-1 ${vehicle.disponivel ? 'btn-primary' : ''}`}
-                  size="sm"
-                  disabled={!vehicle.disponivel}
-                  onClick={() => handleRentRequest(vehicle.id)}
-                >
-                  <Car className="w-4 h-4 mr-2" />
-                  {vehicle.disponivel ? "Solicitar" : "Indisponível"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Empty State */}
@@ -496,13 +375,29 @@ const Vehicles = () => {
             {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="matricula">Matrícula</Label>
+                <Input
+                  id="matricula"
+                  placeholder="Ex: ABC-1234"
+                  value={newVehicleData.matricula}
+                  onChange={(e) => handleInputChange("matricula", e.target.value)}
+                  disabled={createVehicleMutation.isPending}
+                />
+                {errors.matricula && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertDescription className="text-sm">{errors.matricula}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor="marca">Marca</Label>
                 <Input
                   id="marca"
                   placeholder="Ex: Honda"
                   value={newVehicleData.marca}
                   onChange={(e) => handleInputChange("marca", e.target.value)}
-                  disabled={isLoading}
+                  disabled={createVehicleMutation.isPending}
                 />
                 {errors.marca && (
                   <Alert variant="destructive" className="py-2">
@@ -510,7 +405,9 @@ const Vehicles = () => {
                   </Alert>
                 )}
               </div>
-              
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="modelo">Modelo</Label>
                 <Input
@@ -518,7 +415,7 @@ const Vehicles = () => {
                   placeholder="Ex: Civic"
                   value={newVehicleData.modelo}
                   onChange={(e) => handleInputChange("modelo", e.target.value)}
-                  disabled={isLoading}
+                  disabled={createVehicleMutation.isPending}
                 />
                 {errors.modelo && (
                   <Alert variant="destructive" className="py-2">
@@ -526,9 +423,7 @@ const Vehicles = () => {
                   </Alert>
                 )}
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
               <div className="space-y-2">
                 <Label htmlFor="ano">Ano</Label>
                 <Input
@@ -536,7 +431,7 @@ const Vehicles = () => {
                   placeholder="Ex: 2023"
                   value={newVehicleData.ano}
                   onChange={(e) => handleInputChange("ano", e.target.value)}
-                  disabled={isLoading}
+                  disabled={createVehicleMutation.isPending}
                 />
                 {errors.ano && (
                   <Alert variant="destructive" className="py-2">
@@ -544,7 +439,9 @@ const Vehicles = () => {
                   </Alert>
                 )}
               </div>
-              
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="placa">Placa</Label>
                 <Input
@@ -552,7 +449,7 @@ const Vehicles = () => {
                   placeholder="Ex: ABC1D23"
                   value={newVehicleData.placa}
                   onChange={(e) => handleInputChange("placa", e.target.value.toUpperCase())}
-                  disabled={isLoading}
+                  disabled={createVehicleMutation.isPending}
                 />
                 {errors.placa && (
                   <Alert variant="destructive" className="py-2">
@@ -560,63 +457,22 @@ const Vehicles = () => {
                   </Alert>
                 )}
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Categoria</Label>
-                <Select
-                  value={newVehicleData.categoria}
-                  onValueChange={(value) => handleInputChange("categoria", value)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hatch">Hatchback</SelectItem>
-                    <SelectItem value="sedan">Sedan</SelectItem>
-                    <SelectItem value="suv">SUV</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.categoria && (
-                  <Alert variant="destructive" className="py-2">
-                    <AlertDescription className="text-sm">{errors.categoria}</AlertDescription>
-                  </Alert>
-                )}
-              </div>
               
               <div className="space-y-2">
-                <Label htmlFor="preco">Preço Mensal (R$)</Label>
+                <Label htmlFor="proprietario">Proprietário</Label>
                 <Input
-                  id="preco"
-                  placeholder="Ex: 2500"
-                  value={newVehicleData.preco}
-                  onChange={(e) => handleInputChange("preco", e.target.value.replace(/\D/g, ''))}
-                  disabled={isLoading}
+                  id="proprietario"
+                  placeholder="Ex: João Silva"
+                  value={newVehicleData.proprietario}
+                  onChange={(e) => handleInputChange("proprietario", e.target.value)}
+                  disabled={createVehicleMutation.isPending}
                 />
-                {errors.preco && (
+                {errors.proprietario && (
                   <Alert variant="destructive" className="py-2">
-                    <AlertDescription className="text-sm">{errors.preco}</AlertDescription>
+                    <AlertDescription className="text-sm">{errors.proprietario}</AlertDescription>
                   </Alert>
                 )}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="caracteristicas">Características (separadas por vírgula)</Label>
-              <Input
-                id="caracteristicas"
-                placeholder="Ex: Ar condicionado, GPS, Bluetooth"
-                value={newVehicleData.caracteristicas}
-                onChange={(e) => handleInputChange("caracteristicas", e.target.value)}
-                disabled={isLoading}
-              />
-              {errors.caracteristicas && (
-                <Alert variant="destructive" className="py-2">
-                  <AlertDescription className="text-sm">{errors.caracteristicas}</AlertDescription>
-                </Alert>
-              )}
             </div>
 
             <div className="flex gap-4 pt-4">
@@ -625,16 +481,16 @@ const Vehicles = () => {
                 variant="outline" 
                 className="flex-1"
                 onClick={() => setIsAddModalOpen(false)}
-                disabled={isLoading}
+                disabled={createVehicleMutation.isPending}
               >
                 Cancelar
               </Button>
               <Button 
                 type="submit" 
                 className="flex-1 btn-primary"
-                disabled={isLoading}
+                disabled={createVehicleMutation.isPending}
               >
-                {isLoading ? "Adicionando..." : "Adicionar Veículo"}
+                {createVehicleMutation.isPending ? "Adicionando..." : "Adicionar Veículo"}
               </Button>
             </div>
           </form>

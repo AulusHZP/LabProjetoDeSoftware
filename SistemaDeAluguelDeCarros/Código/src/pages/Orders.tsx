@@ -23,104 +23,140 @@ import {
   DollarSign
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { PedidoService, AutomovelService, Pedido, Automovel } from "@/services/api";
 import { z } from "zod";
 
 const Orders = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"list" | "new">("list");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   
   // Mock user type - in real app this would come from auth context
   // Change this value to test different user types: "cliente" or "agente"
   const userType = Math.random() > 0.5 ? "cliente" : "agente" as "cliente" | "agente";
 
+  // Fetch data from API
+  const { data: pedidos = [], isLoading: pedidosLoading } = useQuery({
+    queryKey: ['pedidos'],
+    queryFn: PedidoService.getAll,
+  });
+
+  const { data: veiculos = [] } = useQuery({
+    queryKey: ['veiculos'],
+    queryFn: AutomovelService.getAll,
+  });
+
   // New order form state
   const [newOrderData, setNewOrderData] = useState({
-    vehicleId: "",
-    contractType: "",
-    startDate: "",
-    endDate: "",
-    observations: "",
+    dataInicio: "",
+    dataFim: "",
+    automovelId: "",
+    clienteId: "1", // Mock - in real app would come from auth context
+    agenteId: "",
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Mock orders data
-  const orders = [
-    {
-      id: "PED-001",
-      vehicleInfo: "Honda Civic 2023 - ABC1D23",
-      contractType: "cliente",
-      status: "pending",
-      createdDate: "2024-01-15",
-      startDate: "2024-02-01",
-      endDate: "2024-07-31",
-      monthlyValue: 2500,
-      observations: "Necessário para trabalho"
+  // Create order mutation
+  const createOrderMutation = useMutation({
+    mutationFn: PedidoService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      toast({
+        title: "Pedido criado com sucesso!",
+        description: "Seu pedido foi enviado para análise. Você receberá uma resposta em breve.",
+      });
+      setNewOrderData({
+        dataInicio: "",
+        dataFim: "",
+        automovelId: "",
+        clienteId: "1",
+        agenteId: "",
+      });
+      setActiveTab("list");
     },
-    {
-      id: "PED-002",
-      vehicleInfo: "Toyota Corolla 2022 - DEF5G78", 
-      contractType: "empresa",
-      status: "approved",
-      createdDate: "2024-01-10",
-      startDate: "2024-01-20",
-      endDate: "2024-12-20",
-      monthlyValue: 2200,
-      observations: "Frota corporativa"
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao criar pedido",
+        description: error.message,
+        variant: "destructive",
+      });
     },
-    {
-      id: "PED-003",
-      vehicleInfo: "Volkswagen Jetta 2023 - GHI9J12",
-      contractType: "banco",
-      status: "rejected",
-      createdDate: "2024-01-08",
-      startDate: "2024-02-15",
-      endDate: "2024-08-15",
-      monthlyValue: 2800,
-      observations: "Financiamento negado"
-    }
-  ];
-
-  // Mock available vehicles
-  const availableVehicles = [
-    { id: "VEH-001", label: "Honda Civic 2023 - ABC1D23", price: 2500 },
-    { id: "VEH-002", label: "Toyota Corolla 2022 - DEF5G78", price: 2200 },
-    { id: "VEH-004", label: "Chevrolet Onix 2022 - JKL3M56", price: 1800 },
-    { id: "VEH-005", label: "Ford EcoSport 2021 - MNO7P90", price: 2800 },
-    { id: "VEH-006", label: "Hyundai HB20 2023 - PQR1S34", price: 1950 }
-  ];
-
-  const contractTypes = [
-    { value: "cliente", label: "Propriedade do Cliente" },
-    { value: "empresa", label: "Empresa" },
-    { value: "banco", label: "Banco/Financeira" }
-  ];
-
-  const orderSchema = z.object({
-    vehicleId: z.string().min(1, "Selecione um veículo"),
-    contractType: z.string().min(1, "Selecione o tipo de contrato"),
-    startDate: z.string().min(1, "Data de início obrigatória"),
-    endDate: z.string().min(1, "Data de término obrigatória"),
-    observations: z.string().max(500, "Observações muito longas").optional(),
   });
 
-  const filteredOrders = orders.filter(order =>
-    order.vehicleInfo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.id.toLowerCase().includes(searchTerm.toLowerCase())
+  // Approve/Reject mutations
+  const aproveMutation = useMutation({
+    mutationFn: PedidoService.aprovar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      toast({
+        title: "Pedido aprovado!",
+        description: "Pedido foi aprovado com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível aprovar o pedido.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: PedidoService.rejeitar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      toast({
+        title: "Pedido rejeitado",
+        description: "Pedido foi rejeitado.",
+        variant: "destructive",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível rejeitar o pedido.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Available vehicles for order form
+  const availableVehicles = veiculos.map(veiculo => ({
+    id: veiculo.id.toString(),
+    label: `${veiculo.marca} ${veiculo.modelo} ${veiculo.ano} - ${veiculo.placa}`,
+    price: 0 // API doesn't have price field yet
+  }));
+
+  const orderSchema = z.object({
+    dataInicio: z.string().min(1, "Data de início obrigatória"),
+    dataFim: z.string().min(1, "Data de término obrigatória"),
+    automovelId: z.string().min(1, "Selecione um veículo"),
+  });
+
+  const filteredOrders = pedidos.filter((pedido: Pedido) =>
+    pedido.automovel?.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pedido.automovel?.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pedido.id.toString().includes(searchTerm)
   );
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending":
+      case "PENDENTE":
         return <Badge variant="secondary" className="bg-warning/10 text-warning">Pendente</Badge>;
-      case "approved":
+      case "APROVADO":
         return <Badge variant="secondary" className="bg-success/10 text-success">Aprovado</Badge>;
-      case "rejected":
+      case "REJEITADO":
         return <Badge variant="secondary" className="bg-destructive/10 text-destructive">Rejeitado</Badge>;
+      case "CANCELADO":
+        return <Badge variant="secondary" className="bg-destructive/10 text-destructive">Cancelado</Badge>;
+      case "EM_ANALISE":
+        return <Badge variant="secondary" className="bg-blue/10 text-blue">Em Análise</Badge>;
       default:
         return <Badge variant="secondary">Desconhecido</Badge>;
     }
@@ -128,32 +164,18 @@ const Orders = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "pending":
+      case "PENDENTE":
         return <Clock className="w-4 h-4 text-warning" />;
-      case "approved":
+      case "APROVADO":
         return <CheckCircle className="w-4 h-4 text-success" />;
-      case "rejected":
+      case "REJEITADO":
         return <XCircle className="w-4 h-4 text-destructive" />;
+      case "CANCELADO":
+        return <XCircle className="w-4 h-4 text-destructive" />;
+      case "EM_ANALISE":
+        return <AlertCircle className="w-4 h-4 text-blue" />;
       default:
         return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
-    }
-  };
-
-  const getContractTypeLabel = (type: string) => {
-    const contractType = contractTypes.find(ct => ct.value === type);
-    return contractType?.label || type;
-  };
-
-  const getContractTypeIcon = (type: string) => {
-    switch (type) {
-      case "cliente":
-        return "👤";
-      case "empresa":
-        return "🏢";
-      case "banco":
-        return "🏦";
-      default:
-        return "📄";
     }
   };
 
@@ -195,79 +217,27 @@ const Orders = () => {
       return;
     }
     
-    setIsLoading(true);
+    const pedidoData = {
+      ...newOrderData,
+      automovelId: parseInt(newOrderData.automovelId),
+      clienteId: parseInt(newOrderData.clienteId),
+      status: "PENDENTE" as const,
+    };
     
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Pedido criado com sucesso!",
-        description: "Seu pedido foi enviado para análise. Você receberá uma resposta em breve.",
-      });
-      
-      // Reset form
-      setNewOrderData({
-        vehicleId: "",
-        contractType: "",
-        startDate: "",
-        endDate: "",
-        observations: "",
-      });
-      
-      // Switch back to list view
-      setActiveTab("list");
-    } catch (error) {
-      toast({
-        title: "Erro ao criar pedido",
-        description: "Ocorreu um erro. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    createOrderMutation.mutate(pedidoData);
   };
 
   const handleApproveOrder = async (orderId: string) => {
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Pedido aprovado!",
-        description: `Pedido ${orderId} foi aprovado com sucesso.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível aprovar o pedido.",
-        variant: "destructive",
-      });
-    }
+    aproveMutation.mutate(parseInt(orderId));
   };
 
-  const handleViewDetails = (order: any) => {
+  const handleViewDetails = (order: Pedido) => {
     setSelectedOrder(order);
     setIsDetailsModalOpen(true);
   };
 
   const handleRejectOrder = async (orderId: string) => {
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Pedido rejeitado",
-        description: `Pedido ${orderId} foi rejeitado.`,
-        variant: "destructive",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível rejeitar o pedido.",
-        variant: "destructive",
-      });
-    }
+    rejectMutation.mutate(parseInt(orderId));
   };
 
   return (
@@ -332,83 +302,87 @@ const Orders = () => {
 
           {/* Orders List */}
           <div className="space-y-4">
-            {filteredOrders.map((order) => (
-              <Card key={order.id} className="card-hover">
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0">
-                        {getStatusIcon(order.status)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-lg">{order.id}</h3>
-                          {getStatusBadge(order.status)}
+            {pedidosLoading ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Carregando pedidos...</p>
+              </div>
+            ) : (
+              filteredOrders.map((order: Pedido) => (
+                <Card key={order.id} className="card-hover">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          {getStatusIcon(order.status)}
                         </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Car className="w-4 h-4" />
-                            <span>{order.vehicleInfo}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-lg">Pedido #{order.id}</h3>
+                            {getStatusBadge(order.status)}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Building className="w-4 h-4" />
-                            <span>{getContractTypeIcon(order.contractType)} {getContractTypeLabel(order.contractType)}</span>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <Car className="w-4 h-4" />
+                              <span>{order.automovel?.marca} {order.automovel?.modelo} {order.automovel?.ano} - {order.automovel?.placa}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Building className="w-4 h-4" />
+                              <span>Sistema de Aluguel</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              <span>{order.dataInicio} a {order.dataFim}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="w-4 h-4" />
+                              <span>Aluguel Disponível</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            <span>{order.startDate} a {order.endDate}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="w-4 h-4" />
-                            <span>R$ {order.monthlyValue.toLocaleString()}/mês</span>
-                          </div>
-                        </div>
 
-                        {order.observations && (
                           <p className="text-sm text-muted-foreground mt-2">
-                            <strong>Observações:</strong> {order.observations}
+                            <strong>Cliente:</strong> {order.cliente?.nome || 'Não informado'}
                           </p>
-                        )}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2 lg:flex-col">
-                      {userType === "agente" && order.status === "pending" && (
-                        <>
-                          <Button 
-                            size="sm" 
-                            className="btn-primary"
-                            onClick={() => handleApproveOrder(order.id)}
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Aprovar
-                          </Button>
+                      <div className="flex flex-col sm:flex-row gap-2 lg:flex-col">
+                        {userType === "agente" && order.status === "PENDENTE" && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              className="btn-primary"
+                              onClick={() => handleApproveOrder(order.id.toString())}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Aprovar
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleRejectOrder(order.id.toString())}
+                            >
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Rejeitar
+                            </Button>
+                          </>
+                        )}
+                        
+                        {userType === "cliente" && (
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => handleRejectOrder(order.id)}
+                            onClick={() => handleViewDetails(order)}
                           >
-                            <XCircle className="w-4 h-4 mr-2" />
-                            Rejeitar
+                            Ver Detalhes
                           </Button>
-                        </>
-                      )}
-                      
-                      {userType === "cliente" && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleViewDetails(order)}
-                        >
-                          Ver Detalhes
-                        </Button>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            )}
 
             {filteredOrders.length === 0 && (
               <Card className="text-center py-12">
@@ -439,11 +413,11 @@ const Orders = () => {
             <form onSubmit={handleSubmitOrder} className="space-y-6">
               {/* Vehicle Selection */}
               <div className="space-y-2">
-                <Label htmlFor="vehicleId">Veículo Desejado</Label>
+                <Label htmlFor="automovelId">Veículo Desejado</Label>
                 <Select
-                  value={newOrderData.vehicleId}
-                  onValueChange={(value) => handleInputChange("vehicleId", value)}
-                  disabled={isLoading}
+                  value={newOrderData.automovelId}
+                  onValueChange={(value) => handleInputChange("automovelId", value)}
+                  disabled={createOrderMutation.isPending}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um veículo" />
@@ -451,40 +425,14 @@ const Orders = () => {
                   <SelectContent>
                     {availableVehicles.map((vehicle) => (
                       <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {vehicle.label} - R$ {vehicle.price.toLocaleString()}/mês
+                        {vehicle.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.vehicleId && (
+                {errors.automovelId && (
                   <Alert variant="destructive" className="py-2">
-                    <AlertDescription className="text-sm">{errors.vehicleId}</AlertDescription>
-                  </Alert>
-                )}
-              </div>
-
-              {/* Contract Type */}
-              <div className="space-y-2">
-                <Label htmlFor="contractType">Tipo de Contrato</Label>
-                <Select
-                  value={newOrderData.contractType}
-                  onValueChange={(value) => handleInputChange("contractType", value)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo de contrato" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contractTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {getContractTypeIcon(type.value)} {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.contractType && (
-                  <Alert variant="destructive" className="py-2">
-                    <AlertDescription className="text-sm">{errors.contractType}</AlertDescription>
+                    <AlertDescription className="text-sm">{errors.automovelId}</AlertDescription>
                   </Alert>
                 )}
               </div>
@@ -492,54 +440,36 @@ const Orders = () => {
               {/* Date Range */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Data de Início</Label>
+                  <Label htmlFor="dataInicio">Data de Início</Label>
                   <Input
-                    id="startDate"
+                    id="dataInicio"
                     type="date"
-                    value={newOrderData.startDate}
-                    onChange={(e) => handleInputChange("startDate", e.target.value)}
-                    disabled={isLoading}
+                    value={newOrderData.dataInicio}
+                    onChange={(e) => handleInputChange("dataInicio", e.target.value)}
+                    disabled={createOrderMutation.isPending}
                   />
-                  {errors.startDate && (
+                  {errors.dataInicio && (
                     <Alert variant="destructive" className="py-2">
-                      <AlertDescription className="text-sm">{errors.startDate}</AlertDescription>
+                      <AlertDescription className="text-sm">{errors.dataInicio}</AlertDescription>
                     </Alert>
                   )}
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">Data de Término</Label>
+                  <Label htmlFor="dataFim">Data de Término</Label>
                   <Input
-                    id="endDate"
+                    id="dataFim"
                     type="date"
-                    value={newOrderData.endDate}
-                    onChange={(e) => handleInputChange("endDate", e.target.value)}
-                    disabled={isLoading}
+                    value={newOrderData.dataFim}
+                    onChange={(e) => handleInputChange("dataFim", e.target.value)}
+                    disabled={createOrderMutation.isPending}
                   />
-                  {errors.endDate && (
+                  {errors.dataFim && (
                     <Alert variant="destructive" className="py-2">
-                      <AlertDescription className="text-sm">{errors.endDate}</AlertDescription>
+                      <AlertDescription className="text-sm">{errors.dataFim}</AlertDescription>
                     </Alert>
                   )}
                 </div>
-              </div>
-
-              {/* Observations */}
-              <div className="space-y-2">
-                <Label htmlFor="observations">Observações (Opcional)</Label>
-                <Textarea
-                  id="observations"
-                  placeholder="Adicione informações adicionais sobre o pedido..."
-                  value={newOrderData.observations}
-                  onChange={(e) => handleInputChange("observations", e.target.value)}
-                  disabled={isLoading}
-                  className="min-h-[100px]"
-                />
-                {errors.observations && (
-                  <Alert variant="destructive" className="py-2">
-                    <AlertDescription className="text-sm">{errors.observations}</AlertDescription>
-                  </Alert>
-                )}
               </div>
 
               {/* Submit Buttons */}
@@ -549,16 +479,16 @@ const Orders = () => {
                   variant="outline" 
                   className="flex-1"
                   onClick={() => setActiveTab("list")}
-                  disabled={isLoading}
+                  disabled={createOrderMutation.isPending}
                 >
                   Cancelar
                 </Button>
                 <Button 
                   type="submit" 
                   className="flex-1 btn-primary"
-                  disabled={isLoading}
+                  disabled={createOrderMutation.isPending}
                 >
-                  {isLoading ? "Enviando..." : "Enviar Pedido"}
+                  {createOrderMutation.isPending ? "Enviando..." : "Enviar Pedido"}
                 </Button>
               </div>
             </form>
