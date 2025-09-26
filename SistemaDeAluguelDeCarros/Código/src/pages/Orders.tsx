@@ -24,20 +24,25 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { PedidoService, AutomovelService, Pedido, Automovel } from "@/services/api";
 import { z } from "zod";
 
 const Orders = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"list" | "new">("list");
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   
-  // Mock user type - in real app this would come from auth context
-  // Change this value to test different user types: "cliente" or "agente"
-  const userType = Math.random() > 0.5 ? "cliente" : "agente" as "cliente" | "agente";
+  // Determinar tipo de usuário do contexto de autenticação
+  const userType = user?.tipo === 'CLIENTE' ? 'cliente' : 'agente';
+  const isCliente = userType === 'cliente';
+  const isAgente = userType === 'agente';
+  
+  // Para clientes, iniciar com a aba "new", para agentes iniciar com "list"
+  const [activeTab, setActiveTab] = useState<"list" | "new">(isCliente ? "new" : "list");
 
   // Fetch data from API
   const { data: pedidos = [], isLoading: pedidosLoading } = useQuery({
@@ -68,16 +73,23 @@ const Orders = () => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
       toast({
         title: "Pedido criado com sucesso!",
-        description: "Seu pedido foi enviado para análise. Você receberá uma resposta em breve.",
+        description: isCliente 
+          ? "Seu pedido foi enviado para análise. Clique em 'Meus Pedidos' para acompanhar o status." 
+          : "Pedido foi registrado no sistema.",
       });
       setNewOrderData({
         dataInicio: "",
         dataFim: "",
         automovelId: "",
-        clienteId: "1",
+        clienteId: user?.id.toString() || "1",
         agenteId: "",
       });
-      setActiveTab("list");
+      // Para cliente, permanecer na aba de criar novo pedido
+      if (isCliente) {
+        setActiveTab("new");
+      } else {
+        setActiveTab("list");
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -217,11 +229,25 @@ const Orders = () => {
       return;
     }
     
-    const pedidoData = {
-      ...newOrderData,
-      automovelId: parseInt(newOrderData.automovelId),
-      clienteId: parseInt(newOrderData.clienteId),
-      status: "PENDENTE" as const,
+    // Buscar dados do veículo selecionado
+    const veiculoSelecionado = veiculos.find(v => v.id.toString() === newOrderData.automovelId);
+    
+    const pedidoData: Partial<Pedido> = {
+      dataInicio: newOrderData.dataInicio,
+      dataFim: newOrderData.dataFim,
+      status: "PENDENTE" as any,
+      cliente: user ? {
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        senha: '',
+        tipo: user.tipo,
+        rg: '',
+        cpf: '',
+        endereco: '',
+        profissao: ''
+      } : undefined,
+      automovel: veiculoSelecionado
     };
     
     createOrderMutation.mutate(pedidoData);
@@ -246,11 +272,11 @@ const Orders = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">
-            {userType === "cliente" ? "Meus Pedidos" : "Gestão de Pedidos"}
+            {userType === "cliente" ? "Solicitar Veículo" : "Gestão de Pedidos"}
           </h1>
           <p className="text-muted-foreground">
             {userType === "cliente" 
-              ? "Gerencie seus pedidos de aluguel e acompanhe o status"
+              ? "Faça seu pedido de aluguel de veículo"
               : "Analise e aprove pedidos de aluguel de clientes"
             }
           </p>
@@ -511,9 +537,9 @@ const Orders = () => {
               {/* Header Info */}
               <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                 <div>
-                  <h3 className="font-semibold text-lg">{selectedOrder.id}</h3>
+                  <h3 className="font-semibold text-lg">Pedido #{selectedOrder.id}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Criado em {selectedOrder.createdDate}
+                    Status: {selectedOrder.status}
                   </p>
                 </div>
                 {getStatusBadge(selectedOrder.status)}
@@ -527,23 +553,36 @@ const Orders = () => {
                 </h4>
                 <Card>
                   <CardContent className="p-4">
-                    <p className="font-medium">{selectedOrder.vehicleInfo}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Valor: R$ {selectedOrder.monthlyValue.toLocaleString()}/mês
-                    </p>
+                    {selectedOrder.automovel ? (
+                      <>
+                        <p className="font-medium">{selectedOrder.automovel.marca} {selectedOrder.automovel.modelo} ({selectedOrder.automovel.ano})</p>
+                        <p className="text-sm text-muted-foreground">
+                          Placa: {selectedOrder.automovel.placa} | Matrícula: {selectedOrder.automovel.matricula}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground">Informações do veículo não disponíveis</p>
+                    )}
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Contract Info */}
+              {/* Client Info */}
               <div className="space-y-3">
                 <h4 className="font-medium flex items-center gap-2">
                   <Building className="w-4 h-4" />
-                  Tipo de Contrato
+                  Informações do Cliente
                 </h4>
                 <Card>
                   <CardContent className="p-4">
-                    <p>{getContractTypeIcon(selectedOrder.contractType)} {getContractTypeLabel(selectedOrder.contractType)}</p>
+                    {selectedOrder.cliente ? (
+                      <>
+                        <p className="font-medium">{selectedOrder.cliente.nome}</p>
+                        <p className="text-sm text-muted-foreground">{selectedOrder.cliente.email}</p>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground">Informações do cliente não disponíveis</p>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -559,49 +598,44 @@ const Orders = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Início</p>
-                        <p className="font-medium">{selectedOrder.startDate}</p>
+                        <p className="font-medium">{selectedOrder.dataInicio}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Término</p>
-                        <p className="font-medium">{selectedOrder.endDate}</p>
+                        <p className="font-medium">{selectedOrder.dataFim}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Observations */}
-              {selectedOrder.observations && (
+              {/* Status Actions */}
+              {isAgente && selectedOrder.status === 'PENDENTE' && (
                 <div className="space-y-3">
                   <h4 className="font-medium flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    Observações
+                    Ações
                   </h4>
-                  <Card>
-                    <CardContent className="p-4">
-                      <p>{selectedOrder.observations}</p>
-                    </CardContent>
-                  </Card>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => handleApproveOrder(selectedOrder.id.toString())}
+                      className="btn-primary flex-1"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Aprovar
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => rejectMutation.mutate(selectedOrder.id)}
+                      className="flex-1"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Rejeitar
+                    </Button>
+                  </div>
                 </div>
               )}
 
-              {/* Total Value */}
-              <div className="space-y-3">
-                <h4 className="font-medium flex items-center gap-2">
-                  <DollarSign className="w-4 h-4" />
-                  Valor Total
-                </h4>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-2xl font-bold text-primary">
-                      R$ {selectedOrder.monthlyValue.toLocaleString()}/mês
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Valor pode variar com taxas e seguros adicionais
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
             </div>
           )}
         </DialogContent>

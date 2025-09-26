@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Car, Eye, EyeOff, User, Mail, Phone, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
 
 const registerSchema = z.object({
@@ -32,6 +33,7 @@ const registerSchema = z.object({
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { register } = useAuth();
   
   const [formData, setFormData] = useState({
     nome: "",
@@ -104,22 +106,29 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const success = await register(formData);
       
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Sua conta foi criada. Redirecionando para o login...",
-      });
-      
-      // Redirect to login after success
-      setTimeout(() => {
-        navigate("/login");
-      }, 1500);
+      if (success) {
+        toast({
+          title: "Cadastro realizado com sucesso!",
+          description: "Sua conta foi criada e você foi logado automaticamente.",
+        });
+        
+        // Redirecionar para a página inicial
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      } else {
+        toast({
+          title: "Erro no cadastro",
+          description: "Não foi possível criar a conta. Tente novamente.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Erro no cadastro",
-        description: "Ocorreu um erro. Tente novamente.",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -390,15 +399,14 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Login Link */}
+            {/* Home Link */}
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                Já tem uma conta?{" "}
                 <Link 
-                  to="/login" 
+                  to="/" 
                   className="font-medium text-primary hover:underline"
                 >
-                  Faça login
+                  ← Voltar ao início
                 </Link>
               </p>
             </div>

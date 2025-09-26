@@ -2,21 +2,18 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Car, User, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Simulated auth state - in real app this would come from context/state management
-  const isAuthenticated = false; // This should be managed by your auth system
-  const userType = "client"; // "client" or "agent"
+  const { user, isAuthenticated, logout } = useAuth();
 
   const navigationLinks = [
     { href: "/", label: "Início" },
     { href: "/veiculos", label: "Veículos" },
     { href: "/pedidos", label: "Pedidos" },
-    ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
   ];
 
   const isActiveLink = (href: string) => {
@@ -58,12 +55,15 @@ const Header = () => {
               <div className="flex items-center space-x-4">
                 <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                   <User className="w-4 h-4" />
-                  <span>Minha Conta</span>
+                  <span>Olá, {user?.nome}</span>
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => {/* Handle logout */}}
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
                 >
                   Sair
                 </Button>
@@ -139,6 +139,26 @@ const Header = () => {
                     }}
                   >
                     Cadastrar
+                  </Button>
+                </div>
+              )}
+
+              {isAuthenticated && (
+                <div className="flex flex-col space-y-2 pt-4 border-t border-border">
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-2 justify-start">
+                    <User className="w-4 h-4" />
+                    <span>Olá, {user?.nome}</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      logout();
+                      navigate("/");
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    Sair
                   </Button>
                 </div>
               )}
