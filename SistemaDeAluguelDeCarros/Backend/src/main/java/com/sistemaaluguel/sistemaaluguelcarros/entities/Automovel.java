@@ -1,5 +1,6 @@
 package com.sistemaaluguel.sistemaaluguelcarros.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -49,6 +50,7 @@ public class Automovel {
     private String proprietario;
 
     @OneToOne(mappedBy = "automovel", fetch = FetchType.LAZY)
+    @JsonBackReference
     private Pedido pedido;
 
     // Construtores

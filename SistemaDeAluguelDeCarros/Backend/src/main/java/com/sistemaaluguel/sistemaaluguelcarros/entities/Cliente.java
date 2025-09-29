@@ -1,5 +1,6 @@
 package com.sistemaaluguel.sistemaaluguelcarros.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.sistemaaluguel.sistemaaluguelcarros.enums.TipoUsuario;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -38,6 +39,7 @@ public class Cliente extends Usuario {
     private List<Rendimento> rendimentos = new ArrayList<>();
 
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<Pedido> pedidos = new ArrayList<>();
 
     // Construtores

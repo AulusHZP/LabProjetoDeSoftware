@@ -1,38 +1,82 @@
 package com.sistemaaluguel.sistemaaluguelcarros.controllers;
 
-import com.sistemaaluguel.sistemaaluguelcarros.entities.Pedido;
-import com.sistemaaluguel.sistemaaluguelcarros.dto.PedidoDTO;
-import com.sistemaaluguel.sistemaaluguelcarros.services.PedidoService;
-import com.sistemaaluguel.sistemaaluguelcarros.enums.StatusPedido;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.sistemaaluguel.sistemaaluguelcarros.dto.PedidoDTO;
+import com.sistemaaluguel.sistemaaluguelcarros.dto.PedidoResponseDTO;
+import com.sistemaaluguel.sistemaaluguelcarros.entities.Pedido;
+import com.sistemaaluguel.sistemaaluguelcarros.enums.StatusPedido;
+import com.sistemaaluguel.sistemaaluguelcarros.repository.PedidoRepository;
+import com.sistemaaluguel.sistemaaluguelcarros.services.PedidoService;
+
 @RestController
 @RequestMapping("/api/pedidos")
-@CrossOrigin(origins = "*")
 public class PedidoController {
 
     @Autowired
     private PedidoService pedidoService;
+    
+    @Autowired
+    private PedidoRepository pedidoRepository;
 
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("Test endpoint working");
+    }
+    
+    @GetMapping("/simple")
+    public ResponseEntity<List<PedidoResponseDTO>> findAllSimple() {
+        try {
+            List<PedidoResponseDTO> pedidos = pedidoService.findAllAsDTO();
+            return ResponseEntity.ok(pedidos);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    @GetMapping("/debug")
+    public ResponseEntity<String> debug() {
+        try {
+            List<Object[]> results = pedidoRepository.findAllWithDetails();
+            return ResponseEntity.ok("Found " + results.size() + " results");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
+    }
+    
     @GetMapping
-    public ResponseEntity<List<Pedido>> findAll() {
-        List<Pedido> pedidos = pedidoService.findAll();
-        return ResponseEntity.ok(pedidos);
+    public ResponseEntity<List<PedidoResponseDTO>> findAll() {
+        try {
+            List<PedidoResponseDTO> pedidos = pedidoService.findAllAsDTO();
+            return ResponseEntity.ok(pedidos);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/by-id/{id}")
     public ResponseEntity<Pedido> findById(@PathVariable Long id) {
         Optional<Pedido> pedido = pedidoService.findById(id);
         return pedido.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+    
 
     @GetMapping("/cliente/{clienteId}")
     public ResponseEntity<List<Pedido>> findByClienteId(@PathVariable Long clienteId) {
@@ -54,11 +98,7 @@ public class PedidoController {
 
     @PostMapping
     public ResponseEntity<Pedido> create(@RequestBody PedidoDTO pedidoDTO) {
-        Pedido pedido = new Pedido();
-        pedido.setDataInicio(pedidoDTO.getDataInicio());
-        pedido.setDataFim(pedidoDTO.getDataFim());
-        
-        Pedido savedPedido = pedidoService.save(pedido);
+        Pedido savedPedido = pedidoService.save(pedidoDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedPedido);
     }
 

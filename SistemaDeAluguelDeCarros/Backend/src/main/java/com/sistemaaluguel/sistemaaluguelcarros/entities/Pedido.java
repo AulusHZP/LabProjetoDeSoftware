@@ -1,5 +1,7 @@
 package com.sistemaaluguel.sistemaaluguelcarros.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.sistemaaluguel.sistemaaluguelcarros.enums.StatusPedido;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -30,14 +32,16 @@ public class Pedido {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", nullable = false)
+    @JsonBackReference
     private Cliente cliente;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agente_id")
     private Agente agente;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "automovel_id", nullable = false)
+    @JsonManagedReference
     private Automovel automovel;
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
