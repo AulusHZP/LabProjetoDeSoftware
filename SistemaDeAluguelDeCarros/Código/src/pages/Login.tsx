@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Car, User, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -14,9 +15,20 @@ const Login = () => {
   const { login } = useAuth();
   
   const [selectedUserType, setSelectedUserType] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [senha, setSenha] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !senha) {
+      toast({
+        title: "Preencha email e senha",
+        description: "Informe suas credenciais para continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!selectedUserType) {
       toast({
         title: "Selecione o tipo de usuário",
@@ -29,8 +41,7 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      // Simular login rápido baseado no tipo de usuário
-      const success = await login("usuario@sistema.com", "123456", selectedUserType);
+      const success = await login(email, senha, selectedUserType);
       
       if (success) {
         toast({
@@ -84,6 +95,26 @@ const Login = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
+              {/* Credenciais */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Email</label>
+                <Input
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Senha</label>
+                <Input
+                  type="password"
+                  placeholder="Sua senha"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                />
+              </div>
+
               {/* User Type Selection */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Tipo de Usuário</label>

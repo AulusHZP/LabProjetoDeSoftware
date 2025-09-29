@@ -21,7 +21,7 @@ const registerSchema = z.object({
   cpf: z.string().regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos").trim(),
   telefone: z.string().min(10, "Telefone inválido").max(15, "Telefone muito longo").trim(),
   endereco: z.string().min(10, "Endereço deve ter pelo menos 10 caracteres").max(200, "Endereço muito longo").trim(),
-  // Campos profissionais removidos
+  profissao: z.string().min(2, "Profissão deve ter pelo menos 2 caracteres").max(60, "Profissão muito longa").trim(),
   tipoUsuario: z.enum(["cliente", "agente"], {
     required_error: "Selecione o tipo de usuário",
   }),
@@ -44,6 +44,7 @@ const Register = () => {
     cpf: "",
     telefone: "",
     endereco: "",
+    profissao: "",
     tipoUsuario: "" as "cliente" | "agente" | "",
   });
   
@@ -307,7 +308,22 @@ const Register = () => {
                 )}
               </div>
 
-              {/* Campos profissionais removidos */}
+              {/* Profissão (requerido para Cliente) */}
+              <div className="space-y-2">
+                <Label htmlFor="profissao">Profissão</Label>
+                <Input
+                  id="profissao"
+                  placeholder="Ex: Desenvolvedor(a)"
+                  value={formData.profissao}
+                  onChange={(e) => handleInputChange("profissao", e.target.value)}
+                  disabled={isLoading}
+                />
+                {errors.profissao && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertDescription className="text-sm">{errors.profissao}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
 
               {/* Password Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

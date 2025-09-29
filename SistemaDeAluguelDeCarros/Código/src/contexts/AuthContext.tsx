@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { AuthService } from '@/services/auth';
 
 interface User {
   id: number;
@@ -33,26 +34,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const login = async (email: string, senha: string, userType?: string): Promise<boolean> => {
+  const login = async (email: string, senha: string, _userType?: string): Promise<boolean> => {
     try {
-      // Simulação de login - remova esta parte e implemente a chamada real da API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulando dados do usuário retornados pela API
-      const mockUser: User = {
-        id: 1,
-        nome: userType === 'cliente' ? 'Cliente Sistema' : 'Agente Sistema',
-        email: email,
-        tipo: userType === 'cliente' ? 'CLIENTE' : 'AGENTE'
-      };
-      
-      setUser(mockUser);
+      const resp = await AuthService.login(email, senha);
+      const nextUser: User = {
+        id: resp.id,
+        nome: resp.nome,
+        email: resp.email,
+        tipo: (resp.tipo as any) === 'ADMINISTRADOR' ? 'AGENTE' : (resp.tipo as any)
+      } as User;
+
+      setUser(nextUser);
       setIsAuthenticated(true);
-      
-      // Armazenar no localStorage para persistir entre sessões
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      localStorage.setItem('user', JSON.stringify(nextUser));
       localStorage.setItem('isAuthenticated', 'true');
-      
       return true;
     } catch (error) {
       console.error('Erro no login:', error);
@@ -69,27 +64,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: any): Promise<boolean> => {
     try {
-      // Simulação de registro
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Em uma implementação real, você faria a chamada para a API aqui
-      console.log('Registrando usuário:', userData);
-      
-      // Após o registro bem-sucedido, fazer login automático
-      const newUser: User = {
-        id: Date.now(), // Usar timestamp como ID simulado
-        nome: userData.nome,
-        email: userData.email,
-        tipo: userData.tipoUsuario === 'agente' ? 'AGENTE' : 'CLIENTE'
-      };
-      
-      setUser(newUser);
+      const resp = await AuthService.register(userData);
+      const nextUser: User = {
+        id: resp.id,
+        nome: resp.nome,
+        email: resp.email,
+        tipo: (resp.tipo as any) === 'ADMINISTRADOR' ? 'AGENTE' : (resp.tipo as any)
+      } as User;
+
+      setUser(nextUser);
       setIsAuthenticated(true);
-      
-      // Armazenar no localStorage para persistir entre sessões
-      localStorage.setItem('user', JSON.stringify(newUser));
+      localStorage.setItem('user', JSON.stringify(nextUser));
       localStorage.setItem('isAuthenticated', 'true');
-      
       return true;
     } catch (error) {
       console.error('Erro no registro:', error);
