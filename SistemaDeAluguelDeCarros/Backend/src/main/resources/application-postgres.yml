@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://maglev.proxy.rlwy.net:16651/railway
+    driverClassName: org.postgresql.Driver
+    username: postgres
+    password: mKqFKORQaRYGWYtieldqQImbOBBLjBPG
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+# Use with: --spring.config.location=classpath:/application.yml,classpath:/application-postgres.yml
+# Or set SPRING_PROFILES_ACTIVE=postgres and name file application-postgres.yml accordingly
