@@ -108,3 +108,4 @@ Consulte o arquivo completo para todas as histórias de usuário.
 ---
 
 Sinta-se à vontade para contribuir ou sugerir melhorias!
+mvn spring-boot:run
