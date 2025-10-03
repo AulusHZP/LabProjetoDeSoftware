@@ -27,39 +27,39 @@ public class AutomovelController {
     private AutomovelService automovelService;
 
     @GetMapping
-    public ResponseEntity<List<Automovel>> findAll() {
+    public ResponseEntity<List<Automovel>> findAll() { // realizar o tratamento de exceção para caso não consiga realizar o método
         List<Automovel> automoveis = automovelService.findAll();
         return ResponseEntity.ok(automoveis);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Automovel> findById(@PathVariable Long id) {
+    public ResponseEntity<Automovel> findById(@PathVariable Long id) { // realizar o tratamento de exceção para caso não consiga realizar o método
         Optional<Automovel> automovel = automovelService.findById(id);
         return automovel.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/marca/{marca}")
-    public ResponseEntity<List<Automovel>> findByMarca(@PathVariable String marca) {
+    public ResponseEntity<List<Automovel>> findByMarca(@PathVariable String marca) { // realizar o tratamento de exceção para caso não consiga realizar o método
         List<Automovel> automoveis = automovelService.findByMarca(marca);
         return ResponseEntity.ok(automoveis);
     }
 
     @GetMapping("/modelo/{modelo}")
-    public ResponseEntity<List<Automovel>> findByModelo(@PathVariable String modelo) {
+    public ResponseEntity<List<Automovel>> findByModelo(@PathVariable String modelo) { // realizar o tratamento de exceção para caso não consiga realizar o método
         List<Automovel> automoveis = automovelService.findByModelo(modelo);
         return ResponseEntity.ok(automoveis);
     }
 
     @GetMapping("/ano/{ano}")
-    public ResponseEntity<List<Automovel>> findByAno(@PathVariable Integer ano) {
+    public ResponseEntity<List<Automovel>> findByAno(@PathVariable Integer ano) { // realizar o tratamento de exceção para caso não consiga realizar o método
         List<Automovel> automoveis = automovelService.findByAno(ano);
         return ResponseEntity.ok(automoveis);
     }
 
     @PostMapping
-    public ResponseEntity<Automovel> create(@RequestBody AutomovelDTO automovelDTO) {
-        Automovel automovel = new Automovel();
+    public ResponseEntity<Automovel> create(@RequestBody AutomovelDTO automovelDTO) {// realizar o tratamento de exceção para caso não consiga realizar o método
+        Automovel automovel = new Automovel(); // criar um construtor dentro da service, para que na controller fique apenas o chamado do método e tratamento de exceção
         automovel.setMatricula(automovelDTO.getMatricula());
         automovel.setAno(automovelDTO.getAno());
         automovel.setMarca(automovelDTO.getMarca());
@@ -73,7 +73,9 @@ public class AutomovelController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Automovel> update(@PathVariable Long id, @RequestBody AutomovelDTO automovelDTO) {
+        // realizar o tratamento de exceção para caso não consiga realizar o método
         Optional<Automovel> automovelOpt = automovelService.findById(id);
+        // preencher as informações dentro da service, para que reduza o vazamento de informações e reduza o encapsulamento
         if (automovelOpt.isPresent()) {
             Automovel automovel = automovelOpt.get();
             automovel.setMatricula(automovelDTO.getMatricula());
@@ -91,6 +93,7 @@ public class AutomovelController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        // realizar o tratamento de exceção para caso não consiga realizar o método
         automovelService.deleteById(id);
         return ResponseEntity.noContent().build();
     }

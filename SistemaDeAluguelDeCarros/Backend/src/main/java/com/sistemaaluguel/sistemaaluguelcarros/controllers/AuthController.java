@@ -23,6 +23,8 @@ import java.util.Optional;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    // criar uma classe de auth service, para implementar os métodos que realizam buscas nas repositories ou afins.
+
     @Autowired
     private UsuarioService usuarioService;
 
@@ -31,11 +33,13 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
+        // Realizar a verificação e validação de informação dentro de um método da service
         if (loginDTO.getEmail() == null || loginDTO.getSenha() == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email e senha são obrigatórios");
         }
 
         Optional<Usuario> optUser = usuarioService.findByEmail(loginDTO.getEmail());
+        // verificar dentro de um metodo da service
         if (optUser.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciais inválidas");
         }
@@ -44,7 +48,7 @@ public class AuthController {
         boolean matches = false;
         try {
             matches = passwordEncoder.matches(loginDTO.getSenha(), usuario.getSenha());
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) { } // realizar o tratamento de exceção específico para que facilite a correção de erros
         // Fallback para ambiente de desenvolvimento com senha em texto puro
         if (!matches) {
             matches = loginDTO.getSenha().equals(usuario.getSenha());
@@ -53,6 +57,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciais inválidas");
         }
 
+        // realizar a construção do contrutor de retorno json com as informações do usuário dentro de um método da service.
         LoginResponseDTO resp = new LoginResponseDTO(
                 usuario.getId(),
                 usuario.getNome(),
@@ -74,6 +79,7 @@ public class AuthController {
 
         String hashed = passwordEncoder.encode(dto.senha);
         Usuario novo;
+        // realizar essas validações e inserções dentro de um método da service, pois expõe informações, reduzindo a segurança do código
         if ("agente".equalsIgnoreCase(dto.tipoUsuario)) {
             Agente ag = new Agente();
             ag.setNome(dto.nome);
@@ -97,6 +103,7 @@ public class AuthController {
         }
 
         Usuario saved = usuarioService.save(novo);
+        // assim como relatado anteriormente, o contrutor de retorno, deve ser realizado dentro de uma classe service, tendo apenas o chamado do metoo e o tratamento de exceção.
         LoginResponseDTO resp = new LoginResponseDTO(
                 saved.getId(), saved.getNome(), saved.getEmail(), saved.getTipo() != null ? saved.getTipo().name() : null
         );

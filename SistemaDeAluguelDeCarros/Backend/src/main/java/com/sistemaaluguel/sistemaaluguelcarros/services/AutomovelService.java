@@ -18,26 +18,31 @@ public class AutomovelService {
         return automovelRepository.findAll();
     }
 
+    // tratar o erro caso nao encontre o usuario com o id passado, nesse caso o sistema irá cair e não terá nenhum retorno sobre qual é o problema.
     public Optional<Automovel> findById(Long id) {
         return automovelRepository.findById(id);
     }
 
+    // caso o valor da string seja passado errado ou nao encontrado, o sistema irá dar um erro e como nao esta sedno tratado, ele dará um erro e o sistema irá cair.
     public Optional<Automovel> findByMatricula(String matricula) {
         return automovelRepository.findByMatricula(matricula);
     }
-
+// caso o valor da string seja passado errado ou nao encontrado, o sistema irá dar um erro e como nao esta sedno tratado, ele dará um erro e o sistema irá cair.
     public Optional<Automovel> findByPlaca(String placa) {
         return automovelRepository.findByPlaca(placa);
     }
 
+    // caso o valor da string seja passado errado ou nao encontrado, o sistema irá dar um erro e como nao esta sedno tratado, ele dará um erro e o sistema irá cair.
     public List<Automovel> findByMarca(String marca) {
         return automovelRepository.findByMarca(marca);
     }
 
+    // caso o valor da string seja passado errado ou nao encontrado, o sistema irá dar um erro e como nao esta sedno tratado, ele dará um erro e o sistema irá cair.
     public List<Automovel> findByModelo(String modelo) {
         return automovelRepository.findByModelo(modelo);
     }
 
+    // caso o valor da inteiro seja passado errado ou nao encontrado, o sistema irá dar um erro e como nao esta sedno tratado, ele dará um erro e o sistema irá cair.
     public List<Automovel> findByAno(Integer ano) {
         return automovelRepository.findByAno(ano);
     }
