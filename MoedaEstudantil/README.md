@@ -96,9 +96,8 @@ O arquivo `database_schema.sql` define as tabelas principais:
 Os seguintes diagramas estão na pasta `Documentacao/`:
 
 - ![Diagrama de Caso de Uso](Documentacao/DiagramaCasosDeUso.png)
-- ![Diagrama de Classe](Documentacao/DiagramaDeClasse.png)
-- ![Diagrama de Componentes](Documentacao/DiagramaDeComponentes.png)
-- ![Histórias de Usuário](Documentacao/HistoriaDeUsuario.png)
+- ![Diagrama de Classe](Documentacao/DiagramaDeClasses.png)
+- ![Diagrama de Componentes](Documentacao/DiagraDeComponentes.png)
 
 ---
 
