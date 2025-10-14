@@ -123,8 +123,8 @@ Os seguintes diagramas estão na pasta `Documentacao/`:
 ---
 
 ## Autores
-- Projeto desenvolvido por **AulusHZP** e colaboradores.  
-- **Professor orientador:** João Paulo Carneiro Aramuni  
+- Projeto desenvolvido por **Áulus**, **João Gabriel** e **Lucas Ferreira**.  
+- **Professor:** João Paulo Carneiro Aramuni  
 - **Disciplina:** Laboratório de Desenvolvimento de Software – Engenharia de Software – 4º Período  
 
 ---
