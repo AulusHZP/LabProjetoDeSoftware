@@ -1,6 +1,7 @@
 package com.moedaestudantil.controller;
 
 import com.moedaestudantil.dto.AdvantageRequest;
+import com.moedaestudantil.dto.AdvantageResponse;
 import com.moedaestudantil.dto.RedemptionRequest;
 import com.moedaestudantil.model.Advantage;
 import com.moedaestudantil.model.Redemption;
@@ -28,15 +29,23 @@ public class AdvantageController {
             System.out.println("Creating advantage for company: " + companyId);
             System.out.println("Request: " + request);
             
-            // Teste simples - retornar os dados recebidos
-            return ResponseEntity.ok(Map.of(
-                "id", 1L,
-                "companyId", companyId,
-                "title", request.getTitle(),
-                "description", request.getDescription(),
-                "coinCost", request.getCoinCost(),
-                "maxRedemptions", request.getMaxRedemptions()
-            ));
+            Advantage advantage = advantageService.createAdvantage(companyId, request);
+            System.out.println("Advantage created: " + advantage.getId());
+            
+            // Retornar DTO sem referências circulares
+            AdvantageResponse response = new AdvantageResponse(
+                advantage.getId(),
+                advantage.getTitle(),
+                advantage.getDescription(),
+                advantage.getPhotoUrl(),
+                advantage.getCoinCost(),
+                advantage.getIsActive(),
+                advantage.getMaxRedemptions(),
+                advantage.getCurrentRedemptions(),
+                advantage.getCreatedAt()
+            );
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.out.println("Error creating advantage: " + e.getMessage());
             e.printStackTrace();
@@ -45,9 +54,22 @@ public class AdvantageController {
     }
     
     @GetMapping("/company/{companyId}")
-    public ResponseEntity<List<Advantage>> getAdvantagesByCompany(@PathVariable Long companyId) {
+    public ResponseEntity<List<AdvantageResponse>> getAdvantagesByCompany(@PathVariable Long companyId) {
         List<Advantage> advantages = advantageService.getAdvantagesByCompany(companyId);
-        return ResponseEntity.ok(advantages);
+        List<AdvantageResponse> response = advantages.stream()
+            .map(adv -> new AdvantageResponse(
+                adv.getId(),
+                adv.getTitle(),
+                adv.getDescription(),
+                adv.getPhotoUrl(),
+                adv.getCoinCost(),
+                adv.getIsActive(),
+                adv.getMaxRedemptions(),
+                adv.getCurrentRedemptions(),
+                adv.getCreatedAt()
+            ))
+            .toList();
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping

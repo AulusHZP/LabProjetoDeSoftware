@@ -6,9 +6,9 @@ spring:
     name: moeda-estudantil-backend
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/moeda_estudantil
+    url: jdbc:postgresql://shuttle.proxy.rlwy.net:47685/railway
     username: postgres
-    password: postgres
+    password: QScWjiBhzhVfgzYbXYedVGuxCsTDTMUM
     driver-class-name: org.postgresql.Driver
   
   jpa:

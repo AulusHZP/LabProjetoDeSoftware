@@ -18,6 +18,10 @@ public class Redemption {
     @JoinColumn(name = "advantage_id", nullable = false)
     private Advantage advantage;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id", nullable = false)
+    private Student student;
+    
     @NotBlank(message = "Código do cupom é obrigatório")
     @Column(name = "coupon_code", nullable = false, unique = true)
     private String couponCode;
@@ -35,8 +39,9 @@ public class Redemption {
     // Constructors
     public Redemption() {}
     
-    public Redemption(Advantage advantage, String couponCode, String studentEmail, String studentName) {
+    public Redemption(Advantage advantage, Student student, String couponCode, String studentEmail, String studentName) {
         this.advantage = advantage;
+        this.student = student;
         this.couponCode = couponCode;
         this.studentEmail = studentEmail;
         this.studentName = studentName;
@@ -57,6 +62,14 @@ public class Redemption {
     
     public void setAdvantage(Advantage advantage) {
         this.advantage = advantage;
+    }
+    
+    public Student getStudent() {
+        return student;
+    }
+    
+    public void setStudent(Student student) {
+        this.student = student;
     }
     
     public String getCouponCode() {

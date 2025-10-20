@@ -37,14 +37,24 @@ export default function CompanyDashboard() {
   };
 
   const loadData = async (userId: string) => {
-    const companyData = await apiService.getCompanyById(userId);
-    setCompany(companyData);
+    try {
+      console.log("Carregando dados para empresa ID:", userId);
+      
+      const companyData = await apiService.getCompanyById(userId);
+      console.log("Dados da empresa carregados:", companyData);
+      setCompany(companyData);
 
-    const advantagesData = await apiService.getCompanyAdvantages(userId);
-    setAdvantages(advantagesData || []);
+      const advantagesData = await apiService.getCompanyAdvantages(userId);
+      console.log("Vantagens carregadas:", advantagesData);
+      setAdvantages(advantagesData || []);
 
-    const redempData = await apiService.getRedemptionsByCompany(userId);
-    setRedemptions(redempData || []);
+      const redempData = await apiService.getRedemptionsByCompany(userId);
+      console.log("Resgates carregados:", redempData);
+      setRedemptions(redempData || []);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      toast.error("Erro ao carregar dados do servidor");
+    }
   };
 
   const handleSaveAdvantage = async (e: React.FormEvent) => {
@@ -52,6 +62,7 @@ export default function CompanyDashboard() {
 
     try {
       const userId = "1"; // ID da empresa Tech Solutions
+      console.log("Salvando vantagem para empresa:", userId);
 
       const advantageData = {
         title: formData.title,
@@ -61,10 +72,14 @@ export default function CompanyDashboard() {
         maxRedemptions: parseInt(formData.maxRedemptions),
       };
 
+      console.log("Dados da vantagem:", advantageData);
+
       if (editingAdvantage) {
+        console.log("Atualizando vantagem existente:", editingAdvantage.id);
         await apiService.updateAdvantageV2(String(editingAdvantage.id), advantageData);
         toast.success("Vantagem atualizada!");
       } else {
+        console.log("Criando nova vantagem");
         await apiService.createAdvantageForCompany(userId, advantageData);
         toast.success("Vantagem criada!");
       }
@@ -72,8 +87,11 @@ export default function CompanyDashboard() {
       setIsDialogOpen(false);
       setEditingAdvantage(null);
       setFormData({ title: "", description: "", photoUrl: "", coinCost: "", maxRedemptions: "10" });
+      
+      console.log("Recarregando dados...");
       await loadData(userId);
     } catch (error: any) {
+      console.error("Erro ao salvar vantagem:", error);
       toast.error(error.message || "Erro ao salvar vantagem");
     }
   };
@@ -94,11 +112,17 @@ export default function CompanyDashboard() {
     if (!confirm("Tem certeza que deseja excluir esta vantagem?")) return;
 
     try {
+      console.log("Excluindo vantagem com ID:", id);
       await apiService.deleteAdvantageV2(String(id));
+      console.log("Vantagem excluída com sucesso");
       toast.success("Vantagem excluída!");
+      
       const userId = "1"; // ID da empresa Tech Solutions
+      console.log("Recarregando dados...");
       await loadData(userId);
+      console.log("Dados recarregados");
     } catch (error: any) {
+      console.error("Erro ao excluir vantagem:", error);
       toast.error(error.message || "Erro ao excluir vantagem");
     }
   };
