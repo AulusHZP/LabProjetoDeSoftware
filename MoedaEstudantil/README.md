@@ -98,6 +98,8 @@ Os seguintes diagramas estão na pasta `Documentacao/`:
 - ![Diagrama de Caso de Uso](Documentacao/DiagramaCasosDeUso.png)
 - ![Diagrama de Classe](Documentacao/DiagramaDeClasses.png)
 - ![Diagrama de Componentes](Documentacao/DiagraDeComponentes.png)
+- ![Diagrama de Componentes](Documentacao/DiagramaER.png)
+
 
 ---
 
