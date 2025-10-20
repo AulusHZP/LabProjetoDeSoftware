@@ -1,0 +1,16 @@
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\repository\AdvantageRepository.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\controller\AdvantageController.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\model\Advantage.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\service\CompanyService.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\repository\RedemptionRepository.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\model\Company.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\dto\RedemptionRequest.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\dto\AdvantageRequest.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\model\Redemption.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\dto\CompanyResponse.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\MoedaEstudantilApplication.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\repository\CompanyRepository.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\dto\CompanyLoginRequest.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\controller\CompanyController.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\dto\CompanyRegisterRequest.java
+C:\Users\joaog\Documents\LAB3S2\LabProjetoDeSoftware\MoedaEstudantil\Backend\src\main\java\com\moedaestudantil\service\AdvantageService.java

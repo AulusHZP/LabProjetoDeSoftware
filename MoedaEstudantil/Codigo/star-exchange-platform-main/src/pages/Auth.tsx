@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,12 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Coins } from "lucide-react";
 import { toast } from "sonner";
+import { apiService } from "@/services/api";
 
 export default function Auth() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-  const [userType, setUserType] = useState<"student" | "professor" | "company">("student");
+  const [userType, setUserType] = useState<"student" | "professor" | "company">("company");
 
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
@@ -55,24 +55,10 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: loginPassword,
-      });
-
-      if (authError) throw authError;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("user_type")
-        .eq("id", authData.user.id)
-        .single();
-
+      const res = await apiService.companyLogin(loginEmail, loginPassword);
+      if ((res as any).message) throw new Error((res as any).message);
       toast.success("Login realizado com sucesso!");
-      
-      if (profile?.user_type === "student") navigate("/student");
-      else if (profile?.user_type === "professor") navigate("/professor");
-      else if (profile?.user_type === "company") navigate("/company");
+      navigate('/company');
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
     } finally {
@@ -85,33 +71,7 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: studentData.email,
-        password: studentData.password,
-        options: {
-          data: { user_type: "student" },
-          emailRedirectTo: `${window.location.origin}/student`,
-        },
-      });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        const { error: studentError } = await supabase.from("students").insert({
-          id: authData.user.id,
-          name: studentData.name,
-          cpf: studentData.cpf,
-          rg: studentData.rg,
-          address: studentData.address,
-          institution_id: studentData.institutionId,
-          course: studentData.course,
-        });
-
-        if (studentError) throw studentError;
-
-        toast.success("Cadastro realizado! Faça login para continuar.");
-        setIsLogin(true);
-      }
+      toast.error('Cadastro de aluno ainda não disponível no backend');
     } catch (error: any) {
       toast.error(error.message || "Erro ao cadastrar");
     } finally {
@@ -124,31 +84,7 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: professorData.email,
-        password: professorData.password,
-        options: {
-          data: { user_type: "professor" },
-          emailRedirectTo: `${window.location.origin}/professor`,
-        },
-      });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        const { error: professorError } = await supabase.from("professors").insert({
-          id: authData.user.id,
-          name: professorData.name,
-          cpf: professorData.cpf,
-          institution_id: professorData.institutionId,
-          department: professorData.department,
-        });
-
-        if (professorError) throw professorError;
-
-        toast.success("Cadastro realizado! Faça login para continuar.");
-        setIsLogin(true);
-      }
+      toast.error('Cadastro de professor ainda não disponível no backend');
     } catch (error: any) {
       toast.error(error.message || "Erro ao cadastrar");
     } finally {
@@ -161,29 +97,15 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const res = await apiService.companyRegister({
         email: companyData.email,
         password: companyData.password,
-        options: {
-          data: { user_type: "company" },
-          emailRedirectTo: `${window.location.origin}/company`,
-        },
+        companyName: companyData.companyName,
+        cnpj: companyData.cnpj,
       });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        const { error: companyError } = await supabase.from("companies").insert({
-          id: authData.user.id,
-          company_name: companyData.companyName,
-          cnpj: companyData.cnpj,
-        });
-
-        if (companyError) throw companyError;
-
-        toast.success("Cadastro realizado! Faça login para continuar.");
-        setIsLogin(true);
-      }
+      if ((res as any).message) throw new Error((res as any).message);
+      toast.success("Cadastro realizado! Faça login para continuar.");
+      setIsLogin(true);
     } catch (error: any) {
       toast.error(error.message || "Erro ao cadastrar");
     } finally {
@@ -269,9 +191,7 @@ function StudentSignupForm({ data, setData, onSubmit, loading }: any) {
   const [institutions, setInstitutions] = useState<any[]>([]);
 
   useState(() => {
-    supabase.from("institutions").select("*").then(({ data }) => {
-      if (data) setInstitutions(data);
-    });
+    setInstitutions([]);
   });
 
   return (
@@ -332,9 +252,7 @@ function ProfessorSignupForm({ data, setData, onSubmit, loading }: any) {
   const [institutions, setInstitutions] = useState<any[]>([]);
 
   useState(() => {
-    supabase.from("institutions").select("*").then(({ data }) => {
-      if (data) setInstitutions(data);
-    });
+    setInstitutions([]);
   });
 
   return (

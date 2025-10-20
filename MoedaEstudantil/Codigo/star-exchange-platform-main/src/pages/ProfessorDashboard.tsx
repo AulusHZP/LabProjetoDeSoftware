@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,63 +21,12 @@ export default function ProfessorDashboard() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    checkAuth();
-    loadData();
+    // Backend ainda não implementa professor/alunos/transações
   }, []);
 
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
+  const checkAuth = async () => true;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("user_type")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.user_type !== "professor") {
-      navigate("/auth");
-    }
-  };
-
-  const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: profData } = await supabase
-      .from("professors")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (!profData) {
-      toast.error("Dados do professor não encontrados. Por favor, complete seu cadastro.");
-      return;
-    }
-
-    setProfessor(profData);
-
-    const { data: studentsData } = await supabase
-      .from("students")
-      .select("*")
-      .order("name");
-
-    setStudents(studentsData || []);
-
-    const { data: transData } = await supabase
-      .from("transactions")
-      .select(`
-        *,
-        students (name)
-      `)
-      .eq("professor_id", user.id)
-      .order("created_at", { ascending: false });
-
-    setTransactions(transData || []);
-  };
+  const loadData = async () => {};
 
   const handleSendCoins = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,54 +38,7 @@ export default function ProfessorDashboard() {
         toast.error("Quantidade deve ser positiva");
         return;
       }
-
-      if (coinAmount > professor.coin_balance) {
-        toast.error("Saldo insuficiente");
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Create transaction
-      const { error: transError } = await supabase.from("transactions").insert({
-        professor_id: user.id,
-        student_id: selectedStudent,
-        amount: coinAmount,
-        reason,
-      });
-
-      if (transError) throw transError;
-
-      // Update professor balance
-      const { error: profError } = await supabase
-        .from("professors")
-        .update({ coin_balance: professor.coin_balance - coinAmount })
-        .eq("id", user.id);
-
-      if (profError) throw profError;
-
-      // Update student balance - fetch current balance first
-      const { data: currentStudent } = await supabase
-        .from("students")
-        .select("coin_balance")
-        .eq("id", selectedStudent)
-        .single();
-
-      if (!currentStudent) throw new Error("Aluno não encontrado");
-
-      const { error: studentError } = await supabase
-        .from("students")
-        .update({ coin_balance: currentStudent.coin_balance + coinAmount })
-        .eq("id", selectedStudent);
-
-      if (studentError) throw studentError;
-
-      toast.success("Moedas enviadas com sucesso!");
-      setSelectedStudent("");
-      setAmount("");
-      setReason("");
-      loadData();
+      toast.info('Envio de moedas não disponível no backend no momento');
     } catch (error: any) {
       toast.error(error.message || "Erro ao enviar moedas");
     } finally {
@@ -146,7 +47,6 @@ export default function ProfessorDashboard() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
     navigate("/auth");
   };
 

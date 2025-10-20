@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Coins, LogOut, ShoppingBag, History } from "lucide-react";
 import { toast } from "sonner";
+import { apiService } from "@/services/api";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -16,76 +16,22 @@ export default function StudentDashboard() {
   const [redemptions, setRedemptions] = useState<any[]>([]);
 
   useEffect(() => {
-    checkAuth();
     loadData();
   }, []);
 
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("user_type")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.user_type !== "student") {
-      navigate("/auth");
-    }
+    // Placeholder: no auth flow implemented on backend yet
+    return true;
   };
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: studentData } = await supabase
-      .from("students")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-    setStudent(studentData);
-
-    const { data: advantagesData } = await supabase
-      .from("advantages")
-      .select(`
-        *,
-        companies (company_name)
-      `)
-      .eq("is_active", true)
-      .order("coin_cost");
-
+    // Backend does not expose student endpoints yet; show public advantages
+    const advantagesData = await apiService.getAvailableAdvantages();
     setAdvantages(advantagesData || []);
-
-    const { data: transData } = await supabase
-      .from("transactions")
-      .select(`
-        *,
-        professors (name)
-      `)
-      .eq("student_id", user.id)
-      .order("created_at", { ascending: false });
-
-    setTransactions(transData || []);
-
-    const { data: redempData } = await supabase
-      .from("redemptions")
-      .select(`
-        *,
-        advantages (title, coin_cost)
-      `)
-      .eq("student_id", user.id)
-      .order("created_at", { ascending: false });
-
-    setRedemptions(redempData || []);
   };
 
   const handleRedeem = async (advantage: any) => {
-    if (advantage.coin_cost > student.coin_balance) {
+    if (student && advantage.coin_cost > student.coin_balance) {
       toast.error("Saldo insuficiente");
       return;
     }
@@ -96,36 +42,24 @@ export default function StudentDashboard() {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const couponCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-
-      const { error: redeemError } = await supabase.from("redemptions").insert({
-        student_id: user.id,
-        advantage_id: advantage.id,
-        coupon_code: couponCode,
+      const studentEmail = prompt('Informe seu email para gerar o cupom:') || '';
+      const studentName = prompt('Informe seu nome:') || '';
+      if (!studentEmail || !studentName) {
+        toast.error('Email e nome são obrigatórios');
+        return;
+      }
+      await apiService.redeemAdvantageByStudent({
+        advantageId: Number(advantage.id),
+        studentEmail,
+        studentName,
       });
-
-      if (redeemError) throw redeemError;
-
-      // Update student balance
-      const { error: studentError } = await supabase
-        .from("students")
-        .update({ coin_balance: student.coin_balance - advantage.coin_cost })
-        .eq("id", user.id);
-
-      if (studentError) throw studentError;
-
-      toast.success(`Vantagem resgatada! Cupom: ${couponCode}`);
-      loadData();
+      toast.success('Vantagem resgatada! Verifique seu email.');
     } catch (error: any) {
       toast.error(error.message || "Erro ao resgatar vantagem");
     }
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
     navigate("/auth");
   };
 
@@ -137,7 +71,7 @@ export default function StudentDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Dashboard do Aluno</h1>
-            <p className="text-muted-foreground">Olá, {student.name}</p>
+            <p className="text-muted-foreground">Olá</p>
           </div>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />
@@ -153,7 +87,7 @@ export default function StudentDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="text-4xl font-bold text-primary">{student.coin_balance} 🪙</div>
+            <div className="text-4xl font-bold text-primary">-- 🪙</div>
           </CardContent>
         </Card>
 
@@ -174,10 +108,10 @@ export default function StudentDashboard() {
               {advantages.map((advantage) => (
                 <Card key={advantage.id} className="shadow-card hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    {advantage.photo_url && (
+                    {advantage.photoUrl && (
                       <div className="w-full h-40 mb-4 overflow-hidden rounded-md">
                         <img
-                          src={advantage.photo_url}
+                          src={advantage.photoUrl}
                           alt={advantage.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -187,20 +121,20 @@ export default function StudentDashboard() {
                       </div>
                     )}
                     <CardTitle className="text-lg">{advantage.title}</CardTitle>
-                    <CardDescription>{advantage.companies?.company_name}</CardDescription>
+                    <CardDescription>{advantage.company?.companyName}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground">{advantage.description}</p>
                     <div className="text-xs text-muted-foreground">
-                      Disponível: {advantage.max_redemptions - advantage.current_redemptions} de {advantage.max_redemptions}
+                      Disponível: {advantage.maxRedemptions - advantage.currentRedemptions} de {advantage.maxRedemptions}
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-bold text-primary">
-                        {advantage.coin_cost} 🪙
+                        {advantage.coinCost} 🪙
                       </span>
                       <Button
                         onClick={() => handleRedeem(advantage)}
-                        disabled={advantage.coin_cost > student.coin_balance || advantage.current_redemptions >= advantage.max_redemptions}
+                        disabled={advantage.currentRedemptions >= advantage.maxRedemptions}
                         size="sm"
                       >
                         Resgatar
