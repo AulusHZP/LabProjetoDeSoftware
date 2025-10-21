@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { apiService } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,96 +28,70 @@ export default function CompanyDashboard() {
 
   useEffect(() => {
     checkAuth();
-    loadData();
   }, []);
 
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("user_type")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.user_type !== "company") {
-      navigate("/auth");
-    }
+    // Para teste, vamos usar o ID da empresa de exemplo
+    const userId = "1"; // ID da empresa Tech Solutions
+    await loadData(userId);
   };
 
-  const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+  const loadData = async (userId: string) => {
+    try {
+      console.log("Carregando dados para empresa ID:", userId);
+      
+      const companyData = await apiService.getCompanyById(userId);
+      console.log("Dados da empresa carregados:", companyData);
+      setCompany(companyData);
 
-    const { data: companyData } = await supabase
-      .from("companies")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+      const advantagesData = await apiService.getCompanyAdvantages(userId);
+      console.log("Vantagens carregadas:", advantagesData);
+      setAdvantages(advantagesData || []);
 
-    setCompany(companyData);
-
-    const { data: advantagesData } = await supabase
-      .from("advantages")
-      .select("*")
-      .eq("company_id", user.id)
-      .order("created_at", { ascending: false });
-
-    setAdvantages(advantagesData || []);
-
-    const { data: redempData } = await supabase
-      .from("redemptions")
-      .select(`
-        *,
-        students (name),
-        advantages (title, coin_cost)
-      `)
-      .in("advantage_id", (advantagesData || []).map((a) => a.id))
-      .order("created_at", { ascending: false });
-
-    setRedemptions(redempData || []);
+      const redempData = await apiService.getRedemptionsByCompany(userId);
+      console.log("Resgates carregados:", redempData);
+      setRedemptions(redempData || []);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      toast.error("Erro ao carregar dados do servidor");
+    }
   };
 
   const handleSaveAdvantage = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const userId = "1"; // ID da empresa Tech Solutions
+      console.log("Salvando vantagem para empresa:", userId);
 
       const advantageData = {
-        company_id: user.id,
         title: formData.title,
         description: formData.description,
-        photo_url: formData.photoUrl || null,
-        coin_cost: parseInt(formData.coinCost),
-        max_redemptions: parseInt(formData.maxRedemptions),
+        photoUrl: formData.photoUrl || undefined,
+        coinCost: parseInt(formData.coinCost),
+        maxRedemptions: parseInt(formData.maxRedemptions),
       };
 
-      if (editingAdvantage) {
-        const { error } = await supabase
-          .from("advantages")
-          .update(advantageData)
-          .eq("id", editingAdvantage.id);
+      console.log("Dados da vantagem:", advantageData);
 
-        if (error) throw error;
+      if (editingAdvantage) {
+        console.log("Atualizando vantagem existente:", editingAdvantage.id);
+        await apiService.updateAdvantageV2(String(editingAdvantage.id), advantageData);
         toast.success("Vantagem atualizada!");
       } else {
-        const { error } = await supabase.from("advantages").insert(advantageData);
-
-        if (error) throw error;
+        console.log("Criando nova vantagem");
+        await apiService.createAdvantageForCompany(userId, advantageData);
         toast.success("Vantagem criada!");
       }
 
       setIsDialogOpen(false);
       setEditingAdvantage(null);
       setFormData({ title: "", description: "", photoUrl: "", coinCost: "", maxRedemptions: "10" });
-      loadData();
+      
+      console.log("Recarregando dados...");
+      await loadData(userId);
     } catch (error: any) {
+      console.error("Erro ao salvar vantagem:", error);
       toast.error(error.message || "Erro ao salvar vantagem");
     }
   };
@@ -138,18 +112,22 @@ export default function CompanyDashboard() {
     if (!confirm("Tem certeza que deseja excluir esta vantagem?")) return;
 
     try {
-      const { error } = await supabase.from("advantages").delete().eq("id", id);
-
-      if (error) throw error;
+      console.log("Excluindo vantagem com ID:", id);
+      await apiService.deleteAdvantageV2(String(id));
+      console.log("Vantagem excluída com sucesso");
       toast.success("Vantagem excluída!");
-      loadData();
+      
+      const userId = "1"; // ID da empresa Tech Solutions
+      console.log("Recarregando dados...");
+      await loadData(userId);
+      console.log("Dados recarregados");
     } catch (error: any) {
+      console.error("Erro ao excluir vantagem:", error);
       toast.error(error.message || "Erro ao excluir vantagem");
     }
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
     navigate("/auth");
   };
 
