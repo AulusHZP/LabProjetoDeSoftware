@@ -1,9 +1,13 @@
 package com.moedaestudantil.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -12,13 +16,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "professors")
-public class Professor {
+@Table(name = "students")
+public class Student {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,39 +33,60 @@ public class Professor {
     @Column(name = "name", nullable = false)
     private String name;
     
+    @Email(message = "Email deve ser válido")
+    @NotBlank(message = "Email é obrigatório")
+    @Column(nullable = false, unique = true)
+    private String email;
+    
     @NotBlank(message = "CPF é obrigatório")
-    @Column(name = "cpf", nullable = false, unique = true)
+    @Column(nullable = false, unique = true)
     private String cpf;
     
-    @NotBlank(message = "Departamento é obrigatório")
-    @Column(name = "department", nullable = false)
-    private String department;
+    @NotBlank(message = "RG é obrigatório")
+    @Column(nullable = false)
+    private String rg;
     
-    @NotNull(message = "Instituição é obrigatória")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @NotBlank(message = "Endereço é obrigatório")
+    @Column(name = "address", nullable = false)
+    private String address;
+    
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "institution_id", nullable = false)
     private Institution institution;
     
-    @Column(name = "coin_balance", nullable = false)
-    private Integer coinBalance = 1000; // Professores começam com 1000 moedas por semestre
+    @NotBlank(message = "Curso é obrigatório")
+    @Column(nullable = false)
+    private String course;
     
-    @Column(name = "password", nullable = false)
+    @Column(name = "coin_balance", nullable = false)
+    private Integer coinBalance = 0;
+    
+    @NotBlank(message = "Senha é obrigatória")
+    @Column(nullable = false)
     private String password;
     
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
-    // Constructors
-    public Professor() {}
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Redemption> redemptions;
     
-    public Professor(String name, String cpf, String department, Institution institution, String password) {
+    // Constructors
+    public Student() {}
+    
+    public Student(String name, String email, String cpf, String rg, String address, 
+                   Institution institution, String course, String password) {
         this.name = name;
+        this.email = email;
         this.cpf = cpf;
-        this.department = department;
+        this.rg = rg;
+        this.address = address;
         this.institution = institution;
+        this.course = course;
         this.password = password;
-        this.coinBalance = 1000;
+        this.coinBalance = 0;
     }
     
     // Getters and Setters
@@ -80,6 +106,14 @@ public class Professor {
         this.name = name;
     }
     
+    public String getEmail() {
+        return email;
+    }
+    
+    public void setEmail(String email) {
+        this.email = email;
+    }
+    
     public String getCpf() {
         return cpf;
     }
@@ -88,12 +122,20 @@ public class Professor {
         this.cpf = cpf;
     }
     
-    public String getDepartment() {
-        return department;
+    public String getRg() {
+        return rg;
     }
     
-    public void setDepartment(String department) {
-        this.department = department;
+    public void setRg(String rg) {
+        this.rg = rg;
+    }
+    
+    public String getAddress() {
+        return address;
+    }
+    
+    public void setAddress(String address) {
+        this.address = address;
     }
     
     public Institution getInstitution() {
@@ -102,6 +144,14 @@ public class Professor {
     
     public void setInstitution(Institution institution) {
         this.institution = institution;
+    }
+    
+    public String getCourse() {
+        return course;
+    }
+    
+    public void setCourse(String course) {
+        this.course = course;
     }
     
     public Integer getCoinBalance() {
@@ -126,5 +176,13 @@ public class Professor {
     
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public List<Redemption> getRedemptions() {
+        return redemptions;
+    }
+    
+    public void setRedemptions(List<Redemption> redemptions) {
+        this.redemptions = redemptions;
     }
 }

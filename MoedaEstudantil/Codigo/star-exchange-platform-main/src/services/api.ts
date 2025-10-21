@@ -231,6 +231,60 @@ class ApiService {
     );
   }
 
+  // Student auth methods
+  async studentLogin(email: string, password: string) {
+    return this.request<{ 
+      id: number; 
+      name: string; 
+      email: string; 
+      cpf: string;
+      rg: string;
+      address: string;
+      institutionId: number;
+      institutionName: string;
+      course: string;
+      coinBalance: number;
+      message?: string 
+    }>(
+      '/students/login',
+      {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }
+    );
+  }
+
+  async studentRegister(data: { 
+    name: string;
+    email: string; 
+    cpf: string;
+    rg: string;
+    address: string;
+    institutionId: number;
+    course: string;
+    password: string;
+  }) {
+    return this.request<{ 
+      id: number; 
+      name: string; 
+      email: string; 
+      cpf: string;
+      rg: string;
+      address: string;
+      institutionId: number;
+      institutionName: string;
+      course: string;
+      coinBalance: number;
+      message?: string 
+    }>(
+      '/students/register',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
   async getCompanyAdvantages(companyId: string) {
     return this.request<Array<{
       id: string;

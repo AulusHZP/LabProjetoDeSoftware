@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,7 +71,19 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      toast.error('Cadastro de aluno ainda não disponível no backend');
+      const res = await apiService.studentRegister({
+        name: studentData.name,
+        email: studentData.email,
+        cpf: studentData.cpf,
+        rg: studentData.rg,
+        address: studentData.address,
+        institutionId: Number(studentData.institutionId),
+        course: studentData.course,
+        password: studentData.password,
+      });
+      if ((res as any).message) throw new Error((res as any).message);
+      toast.success("Cadastro realizado! Faça login para continuar.");
+      setIsLogin(true);
     } catch (error: any) {
       toast.error(error.message || "Erro ao cadastrar");
     } finally {
@@ -190,9 +202,18 @@ export default function Auth() {
 function StudentSignupForm({ data, setData, onSubmit, loading }: any) {
   const [institutions, setInstitutions] = useState<any[]>([]);
 
-  useState(() => {
-    setInstitutions([]);
-  });
+  useEffect(() => {
+    const fetchInstitutions = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/institutions');
+        const data = await response.json();
+        setInstitutions(data);
+      } catch (error) {
+        console.error('Erro ao buscar instituições:', error);
+      }
+    };
+    fetchInstitutions();
+  }, []);
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
@@ -251,9 +272,18 @@ function StudentSignupForm({ data, setData, onSubmit, loading }: any) {
 function ProfessorSignupForm({ data, setData, onSubmit, loading }: any) {
   const [institutions, setInstitutions] = useState<any[]>([]);
 
-  useState(() => {
-    setInstitutions([]);
-  });
+  useEffect(() => {
+    const fetchInstitutions = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/institutions');
+        const data = await response.json();
+        setInstitutions(data);
+      } catch (error) {
+        console.error('Erro ao buscar instituições:', error);
+      }
+    };
+    fetchInstitutions();
+  }, []);
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
