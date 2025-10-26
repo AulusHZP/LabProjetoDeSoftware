@@ -49,14 +49,11 @@ public class StudentController {
     
     @PostMapping("/login")
     public ResponseEntity<?> loginStudent(@Valid @RequestBody StudentLoginRequest request) {
-        try {
-            StudentResponse response = studentService.loginStudent(request);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        StudentResponse response = studentService.loginStudent(request);
+        if (response.getMessage() != null) {
+            return ResponseEntity.badRequest().body(response);
         }
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping

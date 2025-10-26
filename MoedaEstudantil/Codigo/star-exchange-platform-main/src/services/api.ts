@@ -31,8 +31,33 @@ class ApiService {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Network error' }));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      // Try to extract a meaningful error message from the response body.
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData) {
+          if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (Array.isArray(errorData)) {
+            errorMessage = errorData.join(' | ');
+          } else if (typeof errorData === 'object') {
+            // Flatten values into a readable string (useful for validation errors)
+            const vals: string[] = Object.values(errorData)
+              .flatMap((v: any) => (Array.isArray(v) ? v : [v]))
+              .map((v: any) => (typeof v === 'string' ? v : JSON.stringify(v)));
+            if (vals.length > 0) errorMessage = vals.join(' | ');
+            else errorMessage = JSON.stringify(errorData);
+          }
+        }
+      } catch (e) {
+        // ignore JSON parse errors and keep generic message
+      }
+      console.error('API request error', response.status, errorMessage);
+      throw new Error(errorMessage);
     }
 
     return response.json();

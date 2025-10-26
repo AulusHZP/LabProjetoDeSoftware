@@ -17,6 +17,7 @@ public class StudentResponse {
     private String course;
     private Integer coinBalance;
     private LocalDateTime createdAt;
+    private String message;
     
     // Constructors
     public StudentResponse() {}
@@ -33,6 +34,10 @@ public class StudentResponse {
         this.course = student.getCourse();
         this.coinBalance = student.getCoinBalance();
         this.createdAt = student.getCreatedAt();
+    }
+
+    public StudentResponse(String message) {
+        this.message = message;
     }
     
     // Getters and Setters
@@ -122,5 +127,13 @@ public class StudentResponse {
     
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

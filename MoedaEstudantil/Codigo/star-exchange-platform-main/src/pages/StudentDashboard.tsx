@@ -16,6 +16,18 @@ export default function StudentDashboard() {
   const [redemptions, setRedemptions] = useState<any[]>([]);
 
   useEffect(() => {
+    // attempt to load logged student from localStorage then fetch public data
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.userType === 'student') {
+          setStudent(parsed);
+        }
+      } catch (e) {
+        console.warn('Erro ao parsear usuário do localStorage', e);
+      }
+    }
     loadData();
   }, []);
 
@@ -63,7 +75,17 @@ export default function StudentDashboard() {
     navigate("/auth");
   };
 
-  if (!student) return null;
+  if (!student) {
+    // If no student is present, redirect to auth page
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-lg">Você não está logado como aluno.</p>
+          <Button className="mt-4" onClick={() => navigate('/auth')}>Ir para login</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-secondary/30 p-4 md:p-8">

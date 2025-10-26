@@ -58,15 +58,15 @@ public class StudentService {
     }
     
     public StudentResponse loginStudent(StudentLoginRequest request) {
-        Student student = studentRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new RuntimeException("Credenciais inválidas"));
-        
-        // Verificar senha (em produção, comparar com hash)
-        if (!student.getPassword().equals(request.getPassword())) {
-            throw new RuntimeException("Credenciais inválidas");
-        }
-        
-        return new StudentResponse(student);
+        return studentRepository.findByEmail(request.getEmail())
+            .map(student -> {
+                // Verificar senha (em produção, comparar com hash)
+                if (!student.getPassword().equals(request.getPassword())) {
+                    return new StudentResponse("Credenciais inválidas");
+                }
+                return new StudentResponse(student);
+            })
+            .orElseGet(() -> new StudentResponse("Credenciais inválidas"));
     }
     
     public List<StudentResponse> getAllStudents() {

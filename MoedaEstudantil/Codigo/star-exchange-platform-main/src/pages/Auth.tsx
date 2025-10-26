@@ -55,10 +55,26 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const res = await apiService.companyLogin(loginEmail, loginPassword);
-      if ((res as any).message) throw new Error((res as any).message);
-      toast.success("Login realizado com sucesso!");
-      navigate('/company');
+      if (userType === 'company') {
+        const res = await apiService.companyLogin(loginEmail, loginPassword);
+        if ((res as any).message) throw new Error((res as any).message);
+        toast.success("Login realizado com sucesso!");
+        navigate('/company');
+      } else if (userType === 'student') {
+        const res = await apiService.studentLogin(loginEmail, loginPassword);
+        if ((res as any).message) throw new Error((res as any).message);
+        toast.success("Login realizado com sucesso!");
+        // store basic student info in localStorage so StudentDashboard can load it
+        try {
+          localStorage.setItem('user', JSON.stringify({ userType: 'student', ...res }));
+        } catch (e) {
+          console.warn('Não foi possível salvar user no localStorage', e);
+        }
+        navigate('/student');
+      } else {
+        // professor
+        toast.error('Login de professor ainda não disponível no backend');
+      }
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
     } finally {
@@ -148,6 +164,20 @@ export default function Auth() {
 
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <Label>Tipo de usuário</Label>
+                  <Select value={userType} onValueChange={(v: any) => setUserType(v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tipo de usuário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Aluno</SelectItem>
+                      <SelectItem value="professor">Professor</SelectItem>
+                      <SelectItem value="company">Empresa Parceira</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label htmlFor="login-email">Email</Label>
                   <Input

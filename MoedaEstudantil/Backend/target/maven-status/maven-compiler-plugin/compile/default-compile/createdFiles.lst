@@ -6,6 +6,7 @@ com\moedaestudantil\dto\StudentLoginRequest.class
 com\moedaestudantil\dto\StudentUpdateRequest.class
 com\moedaestudantil\model\Redemption.class
 com\moedaestudantil\dto\CompanyRegisterRequest.class
+com\moedaestudantil\controller\InstitutionController.class
 com\moedaestudantil\repository\AdvantageRepository.class
 com\moedaestudantil\model\Professor.class
 com\moedaestudantil\dto\AdvantageRequest.class
