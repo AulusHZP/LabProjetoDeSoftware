@@ -73,21 +73,58 @@ public class AdvantageController {
     }
     
     @GetMapping
-    public ResponseEntity<List<Advantage>> getAvailableAdvantages() {
+    public ResponseEntity<List<AdvantageResponse>> getAvailableAdvantages() {
         List<Advantage> advantages = advantageService.getAvailableAdvantages();
-        return ResponseEntity.ok(advantages);
+        List<AdvantageResponse> response = advantages.stream()
+            .map(adv -> new AdvantageResponse(
+                adv.getId(),
+                adv.getTitle(),
+                adv.getDescription(),
+                adv.getPhotoUrl(),
+                adv.getCoinCost(),
+                adv.getIsActive(),
+                adv.getMaxRedemptions(),
+                adv.getCurrentRedemptions(),
+                adv.getCreatedAt()
+            ))
+            .toList();
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/affordable/{maxCost}")
-    public ResponseEntity<List<Advantage>> getAffordableAdvantages(@PathVariable Integer maxCost) {
+    public ResponseEntity<List<AdvantageResponse>> getAffordableAdvantages(@PathVariable Integer maxCost) {
         List<Advantage> advantages = advantageService.getAffordableAdvantages(maxCost);
-        return ResponseEntity.ok(advantages);
+        List<AdvantageResponse> response = advantages.stream()
+            .map(adv -> new AdvantageResponse(
+                adv.getId(),
+                adv.getTitle(),
+                adv.getDescription(),
+                adv.getPhotoUrl(),
+                adv.getCoinCost(),
+                adv.getIsActive(),
+                adv.getMaxRedemptions(),
+                adv.getCurrentRedemptions(),
+                adv.getCreatedAt()
+            ))
+            .toList();
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Advantage> getAdvantageById(@PathVariable Long id) {
+    public ResponseEntity<AdvantageResponse> getAdvantageById(@PathVariable Long id) {
         return advantageService.getAdvantageById(id)
-                .map(advantage -> ResponseEntity.ok(advantage))
+                .map(adv -> new AdvantageResponse(
+                    adv.getId(),
+                    adv.getTitle(),
+                    adv.getDescription(),
+                    adv.getPhotoUrl(),
+                    adv.getCoinCost(),
+                    adv.getIsActive(),
+                    adv.getMaxRedemptions(),
+                    adv.getCurrentRedemptions(),
+                    adv.getCreatedAt()
+                ))
+                .map(resp -> ResponseEntity.ok(resp))
                 .orElse(ResponseEntity.notFound().build());
     }
     
