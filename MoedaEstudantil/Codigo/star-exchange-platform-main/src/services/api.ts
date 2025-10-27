@@ -60,7 +60,14 @@ class ApiService {
       throw new Error(errorMessage);
     }
 
-    return response.json();
+    // Check if there's content before trying to parse JSON
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      const text = await response.text();
+      return text ? JSON.parse(text) : null;
+    }
+    
+    return null;
   }
 
   // Auth methods

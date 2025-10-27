@@ -70,6 +70,7 @@ export default function CompanyDashboard() {
         photoUrl: formData.photoUrl || undefined,
         coinCost: parseInt(formData.coinCost),
         maxRedemptions: parseInt(formData.maxRedemptions),
+        isActive: true, // Adicionando o campo isActive que é obrigatório no backend
       };
 
       console.log("Dados da vantagem:", advantageData);
@@ -97,13 +98,15 @@ export default function CompanyDashboard() {
   };
 
   const handleEditAdvantage = (advantage: any) => {
+    if (!advantage) return;
+    
     setEditingAdvantage(advantage);
     setFormData({
-      title: advantage.title,
-      description: advantage.description,
+      title: advantage.title || "",
+      description: advantage.description || "",
       photoUrl: advantage.photo_url || "",
-      coinCost: advantage.coin_cost.toString(),
-      maxRedemptions: advantage.max_redemptions.toString(),
+      coinCost: advantage.coin_cost ? advantage.coin_cost.toString() : "",
+      maxRedemptions: advantage.max_redemptions ? advantage.max_redemptions.toString() : "10",
     });
     setIsDialogOpen(true);
   };
