@@ -1,18 +1,27 @@
 package com.moedaestudantil.controller;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.moedaestudantil.dto.AdvantageRequest;
 import com.moedaestudantil.dto.AdvantageResponse;
 import com.moedaestudantil.dto.RedemptionRequest;
 import com.moedaestudantil.model.Advantage;
 import com.moedaestudantil.model.Redemption;
 import com.moedaestudantil.service.AdvantageService;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/advantages")
@@ -132,10 +141,30 @@ public class AdvantageController {
     public ResponseEntity<?> updateAdvantage(@PathVariable Long id,
                                            @Valid @RequestBody AdvantageRequest request) {
         try {
+            System.out.println("Updating advantage with ID: " + id);
+            System.out.println("Request: " + request);
+            
             Advantage advantage = advantageService.updateAdvantage(id, request);
-            return ResponseEntity.ok(advantage);
+            System.out.println("Advantage updated successfully");
+            
+            // Retornar DTO sem referências circulares
+            AdvantageResponse response = new AdvantageResponse(
+                advantage.getId(),
+                advantage.getTitle(),
+                advantage.getDescription(),
+                advantage.getPhotoUrl(),
+                advantage.getCoinCost(),
+                advantage.getIsActive(),
+                advantage.getMaxRedemptions(),
+                advantage.getCurrentRedemptions(),
+                advantage.getCreatedAt()
+            );
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            System.out.println("Error updating advantage: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(e.getMessage());
         }
     }
     

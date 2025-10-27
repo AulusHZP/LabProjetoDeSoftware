@@ -93,7 +93,7 @@ export default function StudentDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Dashboard do Aluno</h1>
-            <p className="text-muted-foreground">Olá</p>
+            <p className="text-muted-foreground">Olá {student?.name || student?.studentName || ''}</p>
           </div>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />

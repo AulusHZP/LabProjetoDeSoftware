@@ -142,12 +142,43 @@ export default function CompanyDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Dashboard da Empresa</h1>
-            <p className="text-muted-foreground">{company.company_name}</p>
+            <p className="text-muted-foreground">{company.company_name || company.companyName}</p>
           </div>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />
             Sair
           </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Moedas nas Vantagens</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">
+                {advantages.reduce((sum, adv) => sum + (adv.coin_cost || 0), 0)} 🪙
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Resgates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">{redemptions.length}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Vantagens Disponíveis</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">{advantages.length}</div>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="shadow-card">
@@ -206,7 +237,10 @@ export default function CompanyDashboard() {
                   <TableRow key={advantage.id}>
                     <TableCell className="font-medium">{advantage.title}</TableCell>
                     <TableCell className="max-w-xs truncate">{advantage.description}</TableCell>
-                    <TableCell>{advantage.coin_cost} 🪙</TableCell>
+                    <TableCell>
+                      <span className="font-bold text-primary">{advantage.coin_cost || advantage.coinCost || 0}</span>
+                      <span className="ml-1">🪙</span>
+                    </TableCell>
                     <TableCell>
                       {advantage.current_redemptions}/{advantage.max_redemptions}
                     </TableCell>

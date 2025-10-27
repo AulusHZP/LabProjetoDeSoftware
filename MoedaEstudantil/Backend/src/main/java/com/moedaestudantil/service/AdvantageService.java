@@ -1,5 +1,13 @@
 package com.moedaestudantil.service;
 
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.moedaestudantil.dto.AdvantageRequest;
 import com.moedaestudantil.dto.RedemptionRequest;
 import com.moedaestudantil.model.Advantage;
@@ -8,14 +16,6 @@ import com.moedaestudantil.model.Redemption;
 import com.moedaestudantil.repository.AdvantageRepository;
 import com.moedaestudantil.repository.CompanyRepository;
 import com.moedaestudantil.repository.RedemptionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @Transactional
@@ -69,12 +69,24 @@ public class AdvantageService {
         Advantage advantage = advantageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vantagem não encontrada"));
         
-        advantage.setTitle(request.getTitle());
-        advantage.setDescription(request.getDescription());
-        advantage.setPhotoUrl(request.getPhotoUrl());
-        advantage.setCoinCost(request.getCoinCost());
-        advantage.setIsActive(request.getIsActive());
-        advantage.setMaxRedemptions(request.getMaxRedemptions());
+        if (request.getTitle() != null) {
+            advantage.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            advantage.setDescription(request.getDescription());
+        }
+        if (request.getPhotoUrl() != null) {
+            advantage.setPhotoUrl(request.getPhotoUrl());
+        }
+        if (request.getCoinCost() != null) {
+            advantage.setCoinCost(request.getCoinCost());
+        }
+        if (request.getIsActive() != null) {
+            advantage.setIsActive(request.getIsActive());
+        }
+        if (request.getMaxRedemptions() != null) {
+            advantage.setMaxRedemptions(request.getMaxRedemptions());
+        }
         
         return advantageRepository.save(advantage);
     }
