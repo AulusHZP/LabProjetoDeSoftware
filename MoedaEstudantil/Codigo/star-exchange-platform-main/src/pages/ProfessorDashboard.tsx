@@ -21,7 +21,23 @@ export default function ProfessorDashboard() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Backend ainda não implementa professor/alunos/transações
+    // attempt to load logged professor from localStorage then fetch public data
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.userType === 'professor') {
+          const normalized = {
+            ...parsed,
+            coin_balance: parsed.coinBalance ?? parsed.coin_balance,
+            name: parsed.name ?? parsed.studentName ?? parsed.institutionName ?? parsed.email,
+          };
+          setProfessor(normalized);
+        }
+      } catch (e) {
+        console.warn('Erro ao parsear usuário do localStorage', e);
+      }
+    }
   }, []);
 
   const checkAuth = async () => true;
@@ -50,7 +66,16 @@ export default function ProfessorDashboard() {
     navigate("/auth");
   };
 
-  if (!professor) return null;
+  if (!professor) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-lg">Você não está logado como professor.</p>
+          <Button className="mt-4" onClick={() => navigate('/auth')}>Ir para login</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-secondary/30 p-4 md:p-8">

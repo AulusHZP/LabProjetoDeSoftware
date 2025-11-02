@@ -73,7 +73,18 @@ export default function Auth() {
         navigate('/student');
       } else {
         // professor
-        toast.error('Login de professor ainda não disponível no backend');
+        const res = await apiService.professorLogin(loginEmail, loginPassword);
+        if ((res as any).message) throw new Error((res as any).message);
+        toast.success("Login realizado com sucesso!");
+        try {
+          localStorage.setItem('user', JSON.stringify({ userType: 'professor', ...res }));
+        
+          // debug: log stored user for troubleshooting
+          try { console.debug('Stored user after professor login:', JSON.parse(localStorage.getItem('user') || 'null')); } catch(e) {}
+        } catch (e) {
+          console.warn('Não foi possível salvar user no localStorage', e);
+        }
+        navigate('/professor');
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
@@ -112,7 +123,17 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      toast.error('Cadastro de professor ainda não disponível no backend');
+      const res = await apiService.professorRegister({
+        name: professorData.name,
+        email: professorData.email,
+        cpf: professorData.cpf,
+        institutionId: Number(professorData.institutionId),
+        department: professorData.department,
+        password: professorData.password,
+      });
+      if ((res as any).message) throw new Error((res as any).message);
+      toast.success("Cadastro realizado! Faça login para continuar.");
+      setIsLogin(true);
     } catch (error: any) {
       toast.error(error.message || "Erro ao cadastrar");
     } finally {

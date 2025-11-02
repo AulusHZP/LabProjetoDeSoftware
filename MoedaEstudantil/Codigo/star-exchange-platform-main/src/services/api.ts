@@ -197,6 +197,54 @@ class ApiService {
     }>>(`/professor/students/search?institutionId=${institutionId}&name=${name}`);
   }
 
+  // Professor auth methods
+  async professorLogin(email: string, password: string) {
+    return this.request<{ 
+      id: number;
+      name: string;
+      email: string;
+      cpf: string;
+      department: string;
+      institutionId: number;
+      institutionName: string;
+      coinBalance: number;
+      message?: string;
+    }>(
+      '/professors/login',
+      {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }
+    );
+  }
+
+  async professorRegister(data: {
+    name: string;
+    email: string;
+    cpf: string;
+    institutionId: number;
+    department: string;
+    password: string;
+  }) {
+    return this.request<{
+      id: number;
+      name: string;
+      email: string;
+      cpf: string;
+      department: string;
+      institutionId: number;
+      institutionName: string;
+      coinBalance: number;
+      message?: string;
+    }>(
+      '/professors/register',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
   // Student methods
   async redeemAdvantage(advantageId: string) {
     return this.request<{
