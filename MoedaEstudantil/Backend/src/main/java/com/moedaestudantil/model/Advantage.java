@@ -6,12 +6,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import org.hibernate.annotations.CreationTimestamp;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "advantages")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Advantage {
     
     @Id

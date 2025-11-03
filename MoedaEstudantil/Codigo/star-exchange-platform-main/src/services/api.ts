@@ -152,7 +152,9 @@ class ApiService {
   }
 
   // Professor methods
-  async sendCoins(studentId: string, amount: number, reason: string) {
+  async sendCoins(professorId: string | null, studentId: string, amount: number, reason: string) {
+    const body: any = { studentId, amount, reason };
+    if (professorId) body.professorId = professorId;
     return this.request<{
       id: string;
       professorId: string;
@@ -162,11 +164,12 @@ class ApiService {
       createdAt: string;
     }>('/professor/send-coins', {
       method: 'POST',
-      body: JSON.stringify({ studentId, amount, reason }),
+      body: JSON.stringify(body),
     });
   }
 
-  async getSentTransactions() {
+  async getSentTransactions(professorId?: string) {
+    const qs = professorId ? `?professorId=${professorId}` : '';
     return this.request<Array<{
       id: string;
       professorId: string;
@@ -174,7 +177,8 @@ class ApiService {
       amount: number;
       reason: string;
       createdAt: string;
-    }>>('/professor/transactions');
+      student?: any;
+    }>>(`/professor/transactions${qs}`);
   }
 
   async getStudentsByInstitution(institutionId: string) {
@@ -185,6 +189,21 @@ class ApiService {
       course: string;
       coinBalance: number;
     }>>(`/professor/students/${institutionId}`);
+  }
+
+  async getStudentById(id: string) {
+    return this.request<{
+      id: number;
+      name: string;
+      email: string;
+      cpf: string;
+      rg: string;
+      address: string;
+      institutionId: number;
+      institutionName?: string;
+      course: string;
+      coinBalance: number;
+    }>(`/students/${id}`);
   }
 
   async searchStudents(institutionId: string, name: string) {

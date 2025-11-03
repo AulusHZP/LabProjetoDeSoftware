@@ -51,23 +51,27 @@ public class ProfessorService {
         return new ProfessorResponse(saved);
     }
 
+    @Transactional(readOnly = true)
     public ProfessorResponse loginProfessor(ProfessorLoginRequest request) {
         return professorRepository.findByEmail(request.getEmail())
             .map(professor -> {
                 if (!professor.getPassword().equals(request.getPassword())) {
                     return new ProfessorResponse("Credenciais inválidas");
                 }
+                // Build response while within transaction to avoid LazyInitialization
                 return new ProfessorResponse(professor);
             })
             .orElseGet(() -> new ProfessorResponse("Credenciais inválidas"));
     }
 
+    @Transactional(readOnly = true)
     public List<ProfessorResponse> getAllProfessors() {
         return professorRepository.findAll().stream()
             .map(ProfessorResponse::new)
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public ProfessorResponse getProfessorById(Long id) {
         Professor p = professorRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Professor não encontrado"));

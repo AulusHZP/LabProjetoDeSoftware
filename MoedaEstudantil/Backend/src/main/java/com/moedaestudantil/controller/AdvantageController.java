@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.moedaestudantil.dto.AdvantageRequest;
 import com.moedaestudantil.dto.AdvantageResponse;
 import com.moedaestudantil.dto.RedemptionRequest;
+import com.moedaestudantil.dto.RedemptionResponse;
 import com.moedaestudantil.model.Advantage;
 import com.moedaestudantil.model.Redemption;
 import com.moedaestudantil.service.AdvantageService;
@@ -182,9 +183,22 @@ public class AdvantageController {
     public ResponseEntity<?> redeemAdvantage(@Valid @RequestBody RedemptionRequest request) {
         try {
             Redemption redemption = advantageService.redeemAdvantage(request);
-            return ResponseEntity.ok(redemption);
+            RedemptionResponse response = new RedemptionResponse(
+                redemption.getId(),
+                redemption.getAdvantage().getId(),
+                redemption.getAdvantage().getTitle(),
+                redemption.getAdvantage().getDescription(),
+                redemption.getAdvantage().getCoinCost(),
+                redemption.getCouponCode(),
+                redemption.getStudent() != null ? redemption.getStudent().getId() : null,
+                redemption.getStudentEmail(),
+                redemption.getStudentName(),
+                redemption.getCreatedAt()
+            );
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(e.getMessage());
         }
     }
     

@@ -13,9 +13,11 @@ import com.moedaestudantil.dto.RedemptionRequest;
 import com.moedaestudantil.model.Advantage;
 import com.moedaestudantil.model.Company;
 import com.moedaestudantil.model.Redemption;
+import com.moedaestudantil.model.Student;
 import com.moedaestudantil.repository.AdvantageRepository;
 import com.moedaestudantil.repository.CompanyRepository;
 import com.moedaestudantil.repository.RedemptionRepository;
+import com.moedaestudantil.repository.StudentRepository;
 
 @Service
 @Transactional
@@ -29,6 +31,9 @@ public class AdvantageService {
     
     @Autowired
     private RedemptionRepository redemptionRepository;
+    
+    @Autowired
+    private StudentRepository studentRepository;
     
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final SecureRandom random = new SecureRandom();
@@ -95,35 +100,64 @@ public class AdvantageService {
         advantageRepository.deleteById(id);
     }
     
+    @Transactional
     public Redemption redeemAdvantage(RedemptionRequest request) {
-        Advantage advantage = advantageRepository.findById(request.getAdvantageId())
-                .orElseThrow(() -> new RuntimeException("Vantagem não encontrada"));
-        
-        if (!advantage.getIsActive()) {
-            throw new RuntimeException("Vantagem não está ativa");
+        System.out.println("Iniciando resgate para vantagem: " + request.getAdvantageId());
+        try {
+            // Find advantage and validate it's available
+            Advantage advantage = advantageRepository.findById(request.getAdvantageId())
+                    .orElseThrow(() -> new RuntimeException("Vantagem não encontrada"));
+            
+            System.out.println("Vantagem encontrada: " + advantage.getTitle());
+            
+            if (!advantage.getIsActive()) {
+                throw new RuntimeException("Vantagem não está ativa");
+            }
+            
+            if (advantage.getCurrentRedemptions() >= advantage.getMaxRedemptions()) {
+                throw new RuntimeException("Vantagem esgotada");
+            }
+
+            // Find student and validate balance
+            Student student = studentRepository.findByEmail(request.getStudentEmail())
+                    .orElseThrow(() -> new RuntimeException("Estudante não encontrado com o email: " + request.getStudentEmail()));
+            
+            System.out.println("Estudante encontrado: " + student.getName() + ", saldo: " + student.getCoinBalance());
+            
+            if (student.getCoinBalance() < advantage.getCoinCost()) {
+                throw new RuntimeException("Saldo insuficiente de moedas para resgatar esta vantagem");
+            }
+            
+            // Generate coupon and create redemption
+            String couponCode = generateCouponCode();
+            System.out.println("Cupom gerado: " + couponCode);
+            
+            Redemption redemption = new Redemption();
+            redemption.setAdvantage(advantage);
+            redemption.setStudent(student);
+            redemption.setCouponCode(couponCode);
+            redemption.setStudentEmail(request.getStudentEmail());
+            redemption.setStudentName(request.getStudentName());
+            
+            // Deduct coins from student balance
+            student.setCoinBalance(student.getCoinBalance() - advantage.getCoinCost());
+            studentRepository.save(student);
+            System.out.println("Saldo atualizado: " + student.getCoinBalance());
+            
+            // Save redemption and update advantage count
+            Redemption savedRedemption = redemptionRepository.save(redemption);
+            System.out.println("Resgate salvo com ID: " + savedRedemption.getId());
+            
+            advantage.setCurrentRedemptions(advantage.getCurrentRedemptions() + 1);
+            advantageRepository.save(advantage);
+            System.out.println("Contagem de resgates atualizada: " + advantage.getCurrentRedemptions());
+            
+            return savedRedemption;
+        } catch (Exception e) {
+            System.err.println("Erro ao resgatar vantagem:");
+            e.printStackTrace();
+            throw new RuntimeException("Erro ao processar resgate: " + e.getMessage(), e);
         }
-        
-        if (advantage.getCurrentRedemptions() >= advantage.getMaxRedemptions()) {
-            throw new RuntimeException("Vantagem esgotada");
-        }
-        
-        // Generate unique coupon code
-        String couponCode = generateCouponCode();
-        
-        // Create redemption
-        Redemption redemption = new Redemption();
-        redemption.setAdvantage(advantage);
-        redemption.setCouponCode(couponCode);
-        redemption.setStudentEmail(request.getStudentEmail());
-        redemption.setStudentName(request.getStudentName());
-        
-        redemption = redemptionRepository.save(redemption);
-        
-        // Update advantage redemption count
-        advantage.setCurrentRedemptions(advantage.getCurrentRedemptions() + 1);
-        advantageRepository.save(advantage);
-        
-        return redemption;
     }
     
     public List<Redemption> getRedemptionsByCompany(Long companyId) {

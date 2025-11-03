@@ -5,12 +5,14 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.hibernate.annotations.CreationTimestamp;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "companies")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Company {
     
     @Id

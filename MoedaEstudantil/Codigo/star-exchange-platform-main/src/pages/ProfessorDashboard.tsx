@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Coins, LogOut, Send } from "lucide-react";
 import { toast } from "sonner";
+import { apiService } from "@/services/api";
 
 export default function ProfessorDashboard() {
   const navigate = useNavigate();
@@ -38,11 +39,35 @@ export default function ProfessorDashboard() {
         console.warn('Erro ao parsear usuário do localStorage', e);
       }
     }
+    // when professor is loaded, fetch students and transactions
   }, []);
+
+  useEffect(() => {
+    if (professor) {
+      loadData();
+    }
+  }, [professor]);
 
   const checkAuth = async () => true;
 
-  const loadData = async () => {};
+  const loadData = async () => {
+    try {
+      // fetch students for the professor's institution
+      const instId = professor?.institutionId ?? professor?.institution_id ?? professor?.institutionId;
+      if (instId) {
+        const studentsResp = await apiService.getStudentsByInstitution(String(instId));
+        setStudents(studentsResp || []);
+      }
+
+      // fetch transactions sent by professor (if we have id)
+      const profId = professor?.id?.toString();
+      const tx = await apiService.getSentTransactions(profId);
+      setTransactions(tx || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar dados do professor', error);
+      toast.error(error.message || 'Erro ao carregar dados');
+    }
+  };
 
   const handleSendCoins = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,8 +79,30 @@ export default function ProfessorDashboard() {
         toast.error("Quantidade deve ser positiva");
         return;
       }
-      toast.info('Envio de moedas não disponível no backend no momento');
+
+      if (!selectedStudent) {
+        toast.error('Selecione um aluno válido');
+        return;
+      }
+
+      // send request to backend (include professor id when available)
+      const profId = professor?.id ? String(professor.id) : null;
+      const res = await apiService.sendCoins(profId, selectedStudent, coinAmount, reason);
+
+      // update local UI: deduct professor balance if present
+      if (profId) {
+        setProfessor((prev: any) => ({ ...prev, coin_balance: (prev.coin_balance ?? prev.coinBalance ?? 0) - coinAmount }));
+      }
+
+      // refresh students and transactions
+      await loadData();
+
+      toast.success('Moedas enviadas com sucesso');
+      setAmount('');
+      setReason('');
+      setSelectedStudent('');
     } catch (error: any) {
+      console.error('Erro ao enviar moedas', error);
       toast.error(error.message || "Erro ao enviar moedas");
     } finally {
       setLoading(false);
@@ -120,7 +167,7 @@ export default function ProfessorDashboard() {
                   </SelectTrigger>
                   <SelectContent>
                     {students.map((student) => (
-                      <SelectItem key={student.id} value={student.id}>
+                      <SelectItem key={student.id} value={String(student.id)}>
                         {student.name}
                       </SelectItem>
                     ))}
@@ -172,7 +219,7 @@ export default function ProfessorDashboard() {
                 {transactions.map((trans) => (
                   <TableRow key={trans.id}>
                     <TableCell>{new Date(trans.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>{trans.students?.name}</TableCell>
+                    <TableCell>{trans.student?.name}</TableCell>
                     <TableCell>{trans.amount} 🪙</TableCell>
                     <TableCell className="max-w-xs truncate">{trans.reason}</TableCell>
                   </TableRow>
