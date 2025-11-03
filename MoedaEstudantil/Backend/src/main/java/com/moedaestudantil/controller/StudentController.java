@@ -24,6 +24,10 @@ import com.moedaestudantil.dto.StudentRegisterRequest;
 import com.moedaestudantil.dto.StudentResponse;
 import com.moedaestudantil.dto.StudentUpdateRequest;
 import com.moedaestudantil.service.StudentService;
+import com.moedaestudantil.repository.TransactionRepository;
+import com.moedaestudantil.repository.RedemptionRepository;
+import com.moedaestudantil.model.Transaction;
+import com.moedaestudantil.model.Redemption;
 
 import jakarta.validation.Valid;
 
@@ -34,6 +38,12 @@ public class StudentController {
     
     @Autowired
     private StudentService studentService;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Autowired
+    private RedemptionRepository redemptionRepository;
     
     @PostMapping("/register")
     public ResponseEntity<?> registerStudent(@Valid @RequestBody StudentRegisterRequest request) {
@@ -47,6 +57,56 @@ public class StudentController {
         }
     }
     
+    @GetMapping("/{id}/transactions")
+    public ResponseEntity<?> getStudentTransactions(@PathVariable Long id) {
+        try {
+            List<Transaction> transactions = transactionRepository.findByStudentIdOrderByCreatedAtDesc(id);
+            List<Map<String, Object>> mapped = transactions.stream().map(t -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", t.getId());
+                m.put("amount", t.getAmount());
+                m.put("reason", t.getReason());
+                m.put("created_at", t.getCreatedAt());
+                if (t.getProfessor() != null) {
+                    Map<String, Object> p = new HashMap<>();
+                    p.put("name", t.getProfessor().getName());
+                    m.put("professors", p);
+                }
+                return m;
+            }).toList();
+            return ResponseEntity.ok(mapped);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    @GetMapping("/{id}/redemptions")
+    public ResponseEntity<?> getStudentRedemptions(@PathVariable Long id) {
+        try {
+            List<Redemption> redemptions = redemptionRepository.findByStudent_IdOrderByCreatedAtDesc(id);
+            List<Map<String, Object>> mapped = redemptions.stream().map(r -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", r.getId());
+                m.put("created_at", r.getCreatedAt());
+                m.put("coupon_code", r.getCouponCode());
+                if (r.getAdvantage() != null) {
+                    Map<String, Object> a = new HashMap<>();
+                    a.put("title", r.getAdvantage().getTitle());
+                    a.put("coin_cost", r.getAdvantage().getCoinCost());
+                    m.put("advantages", a);
+                }
+                return m;
+            }).toList();
+            return ResponseEntity.ok(mapped);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> loginStudent(@Valid @RequestBody StudentLoginRequest request) {
         StudentResponse response = studentService.loginStudent(request);

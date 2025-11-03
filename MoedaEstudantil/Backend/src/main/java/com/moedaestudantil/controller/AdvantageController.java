@@ -21,6 +21,7 @@ import com.moedaestudantil.dto.RedemptionResponse;
 import com.moedaestudantil.model.Advantage;
 import com.moedaestudantil.model.Redemption;
 import com.moedaestudantil.service.AdvantageService;
+import com.moedaestudantil.repository.RedemptionRepository;
 
 import jakarta.validation.Valid;
 
@@ -31,6 +32,9 @@ public class AdvantageController {
     
     @Autowired
     private AdvantageService advantageService;
+
+    @Autowired
+    private RedemptionRepository redemptionRepository;
     
     @PostMapping("/company/{companyId}")
     public ResponseEntity<?> createAdvantage(@PathVariable Long companyId,
@@ -213,5 +217,11 @@ public class AdvantageController {
         return advantageService.getRedemptionByCouponCode(couponCode)
                 .map(redemption -> ResponseEntity.ok(redemption))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/redemptions/student/{studentId}")
+    public ResponseEntity<List<Redemption>> getRedemptionsByStudent(@PathVariable Long studentId) {
+        List<Redemption> redemptions = redemptionRepository.findByStudent_IdOrderByCreatedAtDesc(studentId);
+        return ResponseEntity.ok(redemptions);
     }
 }

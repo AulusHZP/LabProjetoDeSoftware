@@ -34,6 +34,20 @@ export default function StudentDashboard() {
     loadData();
   }, []);
 
+  // When student changes (after we normalize from backend), load history
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        if (!student?.id) return;
+        const sid = String(student.id);
+        await fetchHistoryForStudent(sid);
+      } catch (e) {
+        console.warn('Falha ao carregar histórico do aluno', e);
+      }
+    };
+    fetchHistory();
+  }, [student]);
+
   const checkAuth = async () => {
     // Placeholder: no auth flow implemented on backend yet
     return true;
@@ -55,6 +69,10 @@ export default function StudentDashboard() {
           };
           setStudent(normalized);
           try { localStorage.setItem('user', JSON.stringify({ userType: 'student', ...normalized })); } catch(e) {}
+          // fetch history after refreshing student
+          try {
+            await fetchHistoryForStudent(String(fresh.id));
+          } catch(e) {}
         }
       }
     } catch (e) {
@@ -63,6 +81,30 @@ export default function StudentDashboard() {
 
     const advantagesData = await apiService.getAvailableAdvantages();
     setAdvantages(advantagesData || []);
+  };
+
+  // helper to fetch student's history and normalize fields expected by UI
+  const fetchHistoryForStudent = async (sid: string) => {
+    const tx = await apiService.getStudentTransactions(sid);
+    const normalizedTx = (tx || []).map((t: any) => ({
+      id: t.id,
+      amount: t.amount,
+      reason: t.reason,
+      created_at: t.createdAt ?? t.created_at,
+      professors: t.professor ? { name: t.professor.name } : t.professors,
+    }));
+    setTransactions(normalizedTx);
+
+    const red = await apiService.getStudentRedemptions(sid);
+    const normalizedRed = (red || []).map((r: any) => ({
+      id: r.id,
+      created_at: r.createdAt ?? r.created_at,
+      coupon_code: r.couponCode ?? r.coupon_code,
+      advantages: r.advantage
+        ? { title: r.advantage.title, coin_cost: r.advantage.coinCost }
+        : r.advantages,
+    }));
+    setRedemptions(normalizedRed);
   };
 
   const handleRedeem = async (advantage: any) => {
@@ -111,8 +153,9 @@ export default function StudentDashboard() {
       setSelectedAdvantage(null);
       toast.success('Vantagem resgatada! Verifique seu email.');
       
-      // Reload data to update redemptions list and coin balance
-      loadData();
+      // Reload data and refresh history immediately
+      await loadData();
+      try { await fetchHistoryForStudent(String(student.id)); } catch(e) {}
     } catch (error: any) {
       toast.error(error.message || "Erro ao resgatar vantagem");
     }

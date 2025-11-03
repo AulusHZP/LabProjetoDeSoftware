@@ -11,4 +11,5 @@ import com.moedaestudantil.model.Transaction;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     List<Transaction> findByProfessorIdOrderByCreatedAtDesc(Long professorId);
     List<Transaction> findByTypeOrderByCreatedAtDesc(String type);
+    List<Transaction> findByStudentIdOrderByCreatedAtDesc(Long studentId);
 }

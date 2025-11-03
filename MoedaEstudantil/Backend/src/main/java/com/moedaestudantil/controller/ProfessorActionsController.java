@@ -149,4 +149,16 @@ public class ProfessorActionsController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
         }
     }
+
+    @GetMapping("/transactions/student/{studentId}")
+    public ResponseEntity<?> getTransactionsByStudent(@PathVariable Long studentId) {
+        try {
+            List<Transaction> list = transactionRepository.findByStudentIdOrderByCreatedAtDesc(studentId);
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
+        }
+    }
 }

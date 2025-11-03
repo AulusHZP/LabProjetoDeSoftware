@@ -206,6 +206,14 @@ class ApiService {
     }>(`/students/${id}`);
   }
 
+  async getStudentTransactions(studentId: string) {
+    return this.request<Array<any>>(`/students/${studentId}/transactions`);
+  }
+
+  async getStudentRedemptions(studentId: string) {
+    return this.request<Array<any>>(`/students/${studentId}/redemptions`);
+  }
+
   async searchStudents(institutionId: string, name: string) {
     return this.request<Array<{
       id: string;
