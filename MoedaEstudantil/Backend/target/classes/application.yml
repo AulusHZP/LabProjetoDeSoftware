@@ -28,3 +28,6 @@ spring:
 logging:
   level:
     com.moedaestudantil: DEBUG
+
+
+    

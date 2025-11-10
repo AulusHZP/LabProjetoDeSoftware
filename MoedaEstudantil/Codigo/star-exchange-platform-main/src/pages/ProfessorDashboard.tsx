@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Coins, LogOut, Send } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/services/api";
+import emailjs from "@emailjs/browser";
+import EMAILJS_CONFIG from "@/config/emailConfig";
 
 export default function ProfessorDashboard() {
   const navigate = useNavigate();
@@ -96,6 +98,77 @@ export default function ProfessorDashboard() {
 
       // refresh students and transactions
       await loadData();
+
+      // send email notifications (best-effort, non-blocking)
+      try {
+        // Ensure we have student's email by fetching details if necessary
+        let studentObj = students.find((s) => String(s.id) === String(selectedStudent));
+        if (!studentObj || !studentObj.email) {
+          try {
+            const fullStudent = await apiService.getStudentById(String(selectedStudent));
+            studentObj = { ...studentObj, ...fullStudent };
+          } catch (e) {
+            console.warn("Não foi possível obter detalhes completos do aluno para email:", e);
+          }
+        }
+        const professorName = professor?.name ?? professor?.email ?? "Professor";
+        const professorEmail = professor?.email ?? "";
+        const studentName = studentObj?.name ?? "Aluno";
+        const studentEmail = studentObj?.email ?? "";
+        const time = new Date().toLocaleString();
+        const mensagemProfessor = `Você enviou ${coinAmount} 🪙 para ${studentName}. Motivo: ${reason}`;
+        const mensagemAluno = `Você recebeu ${coinAmount} 🪙 do(a) ${professorName}. Motivo: ${reason}`;
+
+        // Notificação para o professor (TEMPLATE_ID_FOR_ME)
+        if (EMAILJS_CONFIG.SERVICE_ID && EMAILJS_CONFIG.TEMPLATE_ID_PROFESSOR && EMAILJS_CONFIG.PUBLIC_KEY) {
+          emailjs.send(
+            EMAILJS_CONFIG.SERVICE_ID,
+            EMAILJS_CONFIG.TEMPLATE_ID_PROFESSOR,
+            {
+              name: professorName,
+              email: professorEmail,
+              message: mensagemProfessor,
+              title: `Confirmação de envio de moedas`,
+              time,
+              aluno_nome: studentName,
+              quantidade: coinAmount,
+              motivo: reason,
+            },
+            EMAILJS_CONFIG.PUBLIC_KEY
+          ).catch((err) => {
+            console.warn("Falha ao enviar email ao professor:", err);
+          });
+        } else {
+          console.warn("EMAILJS_CONFIG inválida para professor:", EMAILJS_CONFIG);
+        }
+
+        // Confirmação para o aluno (TEMPLATE_ID_FOR_SENDER)
+        if (studentEmail && EMAILJS_CONFIG.SERVICE_ID && EMAILJS_CONFIG.TEMPLATE_ID_ALUNO && EMAILJS_CONFIG.PUBLIC_KEY) {
+          emailjs.send(
+            EMAILJS_CONFIG.SERVICE_ID,
+            EMAILJS_CONFIG.TEMPLATE_ID_ALUNO,
+            {
+              name: studentName,
+              email: studentEmail,
+              message: mensagemAluno,
+              title: "Você recebeu moedas! 🎉",
+              time,
+              professor_nome: professorName,
+              quantidade: coinAmount,
+              motivo: reason,
+            },
+            EMAILJS_CONFIG.PUBLIC_KEY
+          ).catch((err) => {
+            console.warn("Falha ao enviar email ao aluno:", err);
+          });
+        } else if (!studentEmail) {
+          console.warn("Aluno sem email, não foi possível enviar confirmação.");
+        } else {
+          console.warn("EMAILJS_CONFIG inválida para aluno:", EMAILJS_CONFIG);
+        }
+      } catch (mailErr) {
+        console.warn("Erro inesperado no envio de emails:", mailErr);
+      }
 
       toast.success('Moedas enviadas com sucesso');
       setAmount('');
