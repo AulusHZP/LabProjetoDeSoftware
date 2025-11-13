@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Coins } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/services/api";
+import Logo from "@/components/Logo";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -163,89 +163,100 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-primary p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary rounded-full">
-              <Coins className="h-8 w-8 text-primary-foreground" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl">Sistema de Moedas Estudantis</CardTitle>
-          <CardDescription>
-            {isLogin ? "Entre na sua conta" : "Crie sua conta"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={isLogin ? "login" : "signup"} onValueChange={(v) => setIsLogin(v === "login")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Cadastro</TabsTrigger>
-            </TabsList>
+    <div className="relative min-h-screen">
+      <img
+        src="/images/login-background.jpg"
+        alt="Estudantes colaborando em um ambiente moderno"
+        className="absolute inset-0 h-full w-full object-cover"
+        loading="lazy"
+      />
+      <div className="absolute inset-0 bg-emerald-950/75" />
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <header className="px-6 pt-6 sm:px-12">
+          <Logo height={56} className="mx-auto drop-shadow-2xl sm:mx-0" />
+        </header>
+        <div className="flex flex-1 items-center justify-center px-4 py-10">
+          <Card className="w-full max-w-md bg-white/95 shadow-2xl backdrop-blur-md">
+            <CardHeader className="space-y-2 text-center">
+              <CardTitle className="text-2xl font-semibold uppercase tracking-wide text-foreground">
+                Sistema de Moedas Estudantis
+              </CardTitle>
+              <CardDescription>
+                {isLogin ? "Entre na sua conta" : "Crie sua conta"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={isLogin ? "login" : "signup"} onValueChange={(v) => setIsLogin(v === "login")}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="login">Login</TabsTrigger>
+                  <TabsTrigger value="signup">Cadastro</TabsTrigger>
+                </TabsList>
 
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <Label>Tipo de usuário</Label>
-                  <Select value={userType} onValueChange={(v: any) => setUserType(v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tipo de usuário" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Aluno</SelectItem>
-                      <SelectItem value="professor">Professor</SelectItem>
-                      <SelectItem value="company">Empresa Parceira</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <TabsContent value="login">
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                      <Label>Tipo de usuário</Label>
+                      <Select value={userType} onValueChange={(v: any) => setUserType(v)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Tipo de usuário" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="student">Aluno</SelectItem>
+                          <SelectItem value="professor">Professor</SelectItem>
+                          <SelectItem value="company">Empresa Parceira</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                <div>
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="login-password">Senha</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Entrando..." : "Entrar"}
-                </Button>
-              </form>
-            </TabsContent>
+                    <div>
+                      <Label htmlFor="login-email">Email</Label>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="login-password">Senha</Label>
+                      <Input
+                        id="login-password"
+                        type="password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Entrando..." : "Entrar"}
+                    </Button>
+                  </form>
+                </TabsContent>
 
-            <TabsContent value="signup">
-              <div className="space-y-4">
-                <Select value={userType} onValueChange={(v: any) => setUserType(v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tipo de usuário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Aluno</SelectItem>
-                    <SelectItem value="professor">Professor</SelectItem>
-                    <SelectItem value="company">Empresa Parceira</SelectItem>
-                  </SelectContent>
-                </Select>
+                <TabsContent value="signup">
+                  <div className="space-y-4">
+                    <Select value={userType} onValueChange={(v: any) => setUserType(v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tipo de usuário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">Aluno</SelectItem>
+                        <SelectItem value="professor">Professor</SelectItem>
+                        <SelectItem value="company">Empresa Parceira</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-                {userType === "student" && <StudentSignupForm data={studentData} setData={setStudentData} onSubmit={handleStudentSignup} loading={loading} />}
-                {userType === "professor" && <ProfessorSignupForm data={professorData} setData={setProfessorData} onSubmit={handleProfessorSignup} loading={loading} />}
-                {userType === "company" && <CompanySignupForm data={companyData} setData={setCompanyData} onSubmit={handleCompanySignup} loading={loading} />}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                    {userType === "student" && <StudentSignupForm data={studentData} setData={setStudentData} onSubmit={handleStudentSignup} loading={loading} />}
+                    {userType === "professor" && <ProfessorSignupForm data={professorData} setData={setProfessorData} onSubmit={handleProfessorSignup} loading={loading} />}
+                    {userType === "company" && <CompanySignupForm data={companyData} setData={setCompanyData} onSubmit={handleCompanySignup} loading={loading} />}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

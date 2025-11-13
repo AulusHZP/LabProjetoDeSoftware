@@ -52,6 +52,9 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      fontFamily: {
+        sans: ["var(--font-primary)"],
+      },
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",
         "gradient-card": "var(--gradient-card)",

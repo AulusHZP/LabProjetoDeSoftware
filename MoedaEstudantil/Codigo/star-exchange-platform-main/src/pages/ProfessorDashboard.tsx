@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { apiService } from "@/services/api";
 import emailjs from "@emailjs/browser";
 import EMAILJS_CONFIG from "@/config/emailConfig";
+import Logo from "@/components/Logo";
 
 export default function ProfessorDashboard() {
   const navigate = useNavigate();
@@ -200,10 +201,13 @@ export default function ProfessorDashboard() {
   return (
     <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard do Professor</h1>
-            <p className="text-muted-foreground">Olá, {professor.name}</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+            <Logo height={52} className="drop-shadow" />
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold">Dashboard do Professor</h1>
+              <p className="text-muted-foreground">Olá, {professor.name}</p>
+            </div>
           </div>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />
