@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.moedaestudantil.dto.AdvantageRequest;
 import com.moedaestudantil.dto.AdvantageResponse;
 import com.moedaestudantil.dto.RedemptionRequest;
+import com.moedaestudantil.dto.RedemptionResponse;
 import com.moedaestudantil.model.Advantage;
 import com.moedaestudantil.model.Redemption;
 import com.moedaestudantil.service.AdvantageService;
+import com.moedaestudantil.repository.RedemptionRepository;
 
 import jakarta.validation.Valid;
 
@@ -30,6 +32,9 @@ public class AdvantageController {
     
     @Autowired
     private AdvantageService advantageService;
+
+    @Autowired
+    private RedemptionRepository redemptionRepository;
     
     @PostMapping("/company/{companyId}")
     public ResponseEntity<?> createAdvantage(@PathVariable Long companyId,
@@ -182,9 +187,22 @@ public class AdvantageController {
     public ResponseEntity<?> redeemAdvantage(@Valid @RequestBody RedemptionRequest request) {
         try {
             Redemption redemption = advantageService.redeemAdvantage(request);
-            return ResponseEntity.ok(redemption);
+            RedemptionResponse response = new RedemptionResponse(
+                redemption.getId(),
+                redemption.getAdvantage().getId(),
+                redemption.getAdvantage().getTitle(),
+                redemption.getAdvantage().getDescription(),
+                redemption.getAdvantage().getCoinCost(),
+                redemption.getCouponCode(),
+                redemption.getStudent() != null ? redemption.getStudent().getId() : null,
+                redemption.getStudentEmail(),
+                redemption.getStudentName(),
+                redemption.getCreatedAt()
+            );
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(e.getMessage());
         }
     }
     
@@ -199,5 +217,11 @@ public class AdvantageController {
         return advantageService.getRedemptionByCouponCode(couponCode)
                 .map(redemption -> ResponseEntity.ok(redemption))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/redemptions/student/{studentId}")
+    public ResponseEntity<List<Redemption>> getRedemptionsByStudent(@PathVariable Long studentId) {
+        List<Redemption> redemptions = redemptionRepository.findByStudent_IdOrderByCreatedAtDesc(studentId);
+        return ResponseEntity.ok(redemptions);
     }
 }

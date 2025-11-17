@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -31,6 +32,10 @@ public class Professor {
     @NotBlank(message = "CPF é obrigatório")
     @Column(name = "cpf", nullable = false, unique = true)
     private String cpf;
+    
+    @Email(message = "Email deve ser válido")
+    @Column(name = "email", unique = true)
+    private String email;
     
     @NotBlank(message = "Departamento é obrigatório")
     @Column(name = "department", nullable = false)
@@ -61,6 +66,15 @@ public class Professor {
         this.institution = institution;
         this.password = password;
         this.coinBalance = 1000;
+    }
+    
+    // email getter/setter
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
     
     // Getters and Setters

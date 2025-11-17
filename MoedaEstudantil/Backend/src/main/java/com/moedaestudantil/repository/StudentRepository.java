@@ -1,5 +1,6 @@
 package com.moedaestudantil.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,4 +14,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     Optional<Student> findByCpf(String cpf);
     boolean existsByEmail(String email);
     boolean existsByCpf(String cpf);
+    
+    // find students by institution id
+    List<Student> findByInstitutionId(Long institutionId);
 }

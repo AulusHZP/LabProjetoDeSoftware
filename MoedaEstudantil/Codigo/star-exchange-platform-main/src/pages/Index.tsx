@@ -2,13 +2,17 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Coins, Users, Building2, GraduationCap } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const Index = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-primary">
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-12 md:py-16">
+        <header className="mb-12 flex justify-center md:justify-start">
+          <Logo height={64} className="drop-shadow-lg" />
+        </header>
         <div className="text-center mb-12">
           <div className="flex justify-center mb-6">
             <div className="p-4 bg-white rounded-full shadow-lg">

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 100" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">Star Exchange Platform</title>
+  <desc id="logoDesc">Stylized coin with star representing the Star Exchange platform</desc>
+  <defs>
+    <linearGradient id="coinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80" />
+      <stop offset="100%" stop-color="#16a34a" />
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#bbf7d0" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(10,10)">
+    <circle cx="40" cy="40" r="38" fill="url(#coinGradient)" stroke="#ffffff" stroke-width="4" />
+    <circle cx="40" cy="40" r="28" fill="rgba(255,255,255,0.15)" />
+    <polygon points="40,16 46,34 65,34 50,45 56,64 40,52 24,64 30,45 15,34 34,34" fill="#ffffff" opacity="0.9" />
+  </g>
+
+  <g transform="translate(110,62)">
+    <text font-family="Quantum, 'Segoe UI', sans-serif" font-size="36" fill="url(#textGradient)" font-weight="700" letter-spacing="1.2">
+      STAR
+    </text>
+  </g>
+  <g transform="translate(110,92)">
+    <text font-family="Quantum, 'Segoe UI', sans-serif" font-size="24" fill="#fef9c3" letter-spacing="6">
+      EXCHANGE
+    </text>
+  </g>
+</svg>
+

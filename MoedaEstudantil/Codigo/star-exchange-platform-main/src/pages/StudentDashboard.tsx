@@ -4,9 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Coins, LogOut, ShoppingBag, History } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/services/api";
+import emailjs from "@emailjs/browser";
+import EMAILJS_CONFIG from "@/config/emailConfig";
+import Logo from "@/components/Logo";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -14,6 +18,8 @@ export default function StudentDashboard() {
   const [advantages, setAdvantages] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [redemptions, setRedemptions] = useState<any[]>([]);
+  const [selectedAdvantage, setSelectedAdvantage] = useState<any>(null);
+  const [isRedeemDialogOpen, setIsRedeemDialogOpen] = useState(false);
 
   useEffect(() => {
     // attempt to load logged student from localStorage then fetch public data
@@ -31,15 +37,77 @@ export default function StudentDashboard() {
     loadData();
   }, []);
 
+  // When student changes (after we normalize from backend), load history
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        if (!student?.id) return;
+        const sid = String(student.id);
+        await fetchHistoryForStudent(sid);
+      } catch (e) {
+        console.warn('Falha ao carregar histórico do aluno', e);
+      }
+    };
+    fetchHistory();
+  }, [student]);
+
   const checkAuth = async () => {
     // Placeholder: no auth flow implemented on backend yet
     return true;
   };
 
   const loadData = async () => {
-    // Backend does not expose student endpoints yet; show public advantages
+    // Refresh student info from backend (if logged in) so coin balance is up-to-date
+    try {
+      if (student && student.id) {
+        const fresh = await apiService.getStudentById(String(student.id));
+        if (fresh) {
+          // normalize fields and persist to localStorage so UI and other pages update
+          const normalized = {
+            ...student,
+            ...fresh,
+            coin_balance: fresh.coinBalance,
+            name: fresh.name ?? student.name,
+            email: fresh.email ?? student.email,
+          };
+          setStudent(normalized);
+          try { localStorage.setItem('user', JSON.stringify({ userType: 'student', ...normalized })); } catch(e) {}
+          // fetch history after refreshing student
+          try {
+            await fetchHistoryForStudent(String(fresh.id));
+          } catch(e) {}
+        }
+      }
+    } catch (e) {
+      console.warn('Não foi possível atualizar dados do aluno', e);
+    }
+
     const advantagesData = await apiService.getAvailableAdvantages();
     setAdvantages(advantagesData || []);
+  };
+
+  // helper to fetch student's history and normalize fields expected by UI
+  const fetchHistoryForStudent = async (sid: string) => {
+    const tx = await apiService.getStudentTransactions(sid);
+    const normalizedTx = (tx || []).map((t: any) => ({
+      id: t.id,
+      amount: t.amount,
+      reason: t.reason,
+      created_at: t.createdAt ?? t.created_at,
+      professors: t.professor ? { name: t.professor.name } : t.professors,
+    }));
+    setTransactions(normalizedTx);
+
+    const red = await apiService.getStudentRedemptions(sid);
+    const normalizedRed = (red || []).map((r: any) => ({
+      id: r.id,
+      created_at: r.createdAt ?? r.created_at,
+      coupon_code: r.couponCode ?? r.coupon_code,
+      advantages: r.advantage
+        ? { title: r.advantage.title, coin_cost: r.advantage.coinCost }
+        : r.advantages,
+    }));
+    setRedemptions(normalizedRed);
   };
 
   const handleRedeem = async (advantage: any) => {
@@ -53,19 +121,83 @@ export default function StudentDashboard() {
       return;
     }
 
+    setSelectedAdvantage(advantage);
+    setIsRedeemDialogOpen(true);
+  };
+
+  const confirmRedeem = async () => {
+    if (!selectedAdvantage || !student) return;
+    
+    // Validate required fields
+    if (!student.email) {
+      toast.error("Email do estudante não encontrado");
+      return;
+    }
+    
+    if (!student.name) {
+      toast.error("Nome do estudante não encontrado");
+      return;
+    }
+
+    const advantageId = Number(selectedAdvantage.id);
+    if (isNaN(advantageId)) {
+      toast.error("ID da vantagem inválido");
+      return;
+    }
+
     try {
-      const studentEmail = prompt('Informe seu email para gerar o cupom:') || '';
-      const studentName = prompt('Informe seu nome:') || '';
-      if (!studentEmail || !studentName) {
-        toast.error('Email e nome são obrigatórios');
-        return;
-      }
-      await apiService.redeemAdvantageByStudent({
-        advantageId: Number(advantage.id),
-        studentEmail,
-        studentName,
+      const redemptionResponse = await apiService.redeemAdvantageByStudent({
+        advantageId: advantageId,
+        studentEmail: student.email,
+        studentName: student.name,
       });
+      
+      setIsRedeemDialogOpen(false);
+      setSelectedAdvantage(null);
       toast.success('Vantagem resgatada! Verifique seu email.');
+      
+      // Reload data and refresh history immediately
+      await loadData();
+      try { await fetchHistoryForStudent(String(student.id)); } catch(e) {}
+
+      // Send email confirmation (best-effort, non-blocking)
+      try {
+        const studentName = student.name ?? "Aluno";
+        const studentEmail = student.email ?? "";
+        const time = new Date().toLocaleString();
+        const redemption = redemptionResponse as any;
+        const advantageTitle = redemption?.title ?? selectedAdvantage?.title ?? "Vantagem";
+        const coinCost = redemption?.coinCost ?? selectedAdvantage?.coinCost ?? 0;
+        const couponCode = redemption?.couponCode ?? "";
+        const mensagemAluno = `Você resgatou a vantagem "${advantageTitle}" por ${coinCost} 🪙. Seu código de cupom é: ${couponCode}`;
+
+        // Confirmação para o aluno (TEMPLATE_ID_VANTAGEM)
+        if (studentEmail && EMAILJS_CONFIG.SERVICE_ID2 && EMAILJS_CONFIG.TEMPLATE_ID_VANTAGEM && EMAILJS_CONFIG.PUBLIC_KEY2) {
+          emailjs.send(
+            EMAILJS_CONFIG.SERVICE_ID2,
+            EMAILJS_CONFIG.TEMPLATE_ID_VANTAGEM,
+            {
+              name: studentName,
+              email: studentEmail,
+              message: mensagemAluno,
+              title: "Vantagem resgatada com sucesso! 🎉",
+              time,
+              vantagem_titulo: advantageTitle,
+              quantidade: coinCost,
+              cupom: couponCode,
+            },
+            EMAILJS_CONFIG.PUBLIC_KEY2
+          ).catch((err) => {
+            console.warn("Falha ao enviar email ao aluno:", err);
+          });
+        } else if (!studentEmail) {
+          console.warn("Aluno sem email, não foi possível enviar confirmação.");
+        } else {
+          console.warn("EMAILJS_CONFIG inválida para vantagem:", EMAILJS_CONFIG);
+        }
+      } catch (mailErr) {
+        console.warn("Erro inesperado no envio de email:", mailErr);
+      }
     } catch (error: any) {
       toast.error(error.message || "Erro ao resgatar vantagem");
     }
@@ -90,10 +222,13 @@ export default function StudentDashboard() {
   return (
     <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard do Aluno</h1>
-            <p className="text-muted-foreground">Olá {student?.name || student?.studentName || ''}</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+            <Logo height={52} className="drop-shadow" />
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold">Dashboard do Aluno</h1>
+              <p className="text-muted-foreground">Olá {student?.name || student?.studentName || ''}</p>
+            </div>
           </div>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />
@@ -109,7 +244,7 @@ export default function StudentDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="text-4xl font-bold text-primary">-- 🪙</div>
+            <div className="text-4xl font-bold text-primary">{(student?.coin_balance ?? student?.coinBalance ?? '--')} 🪙</div>
           </CardContent>
         </Card>
 
@@ -127,13 +262,15 @@ export default function StudentDashboard() {
 
           <TabsContent value="advantages" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {advantages.map((advantage) => (
+              {advantages.map((advantage) => {
+                const photoUrl = advantage.photoUrl || advantage.photo_url;
+                return (
                 <Card key={advantage.id} className="shadow-card hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    {advantage.photoUrl && (
+                    {photoUrl && (
                       <div className="w-full h-40 mb-4 overflow-hidden rounded-md">
                         <img
-                          src={advantage.photoUrl}
+                          src={photoUrl}
                           alt={advantage.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -164,7 +301,8 @@ export default function StudentDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           </TabsContent>
 
@@ -229,6 +367,21 @@ export default function StudentDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={isRedeemDialogOpen} onOpenChange={setIsRedeemDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Resgate</DialogTitle>
+            <DialogDescription>
+              Deseja resgatar a vantagem {selectedAdvantage?.title} por {selectedAdvantage?.coinCost} 🪙?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRedeemDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={confirmRedeem}>Confirmar Resgate</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

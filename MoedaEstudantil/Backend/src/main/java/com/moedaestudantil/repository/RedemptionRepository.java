@@ -15,4 +15,6 @@ public interface RedemptionRepository extends JpaRepository<Redemption, Long> {
     
     @Query("SELECT r FROM Redemption r WHERE r.advantage.company.id = :companyId ORDER BY r.createdAt DESC")
     List<Redemption> findRedemptionsByCompany(@Param("companyId") Long companyId);
+    
+    List<Redemption> findByStudent_IdOrderByCreatedAtDesc(Long studentId);
 }

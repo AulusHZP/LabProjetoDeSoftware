@@ -9,6 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Coins, LogOut, Send } from "lucide-react";
 import { toast } from "sonner";
+import { apiService } from "@/services/api";
+import emailjs from "@emailjs/browser";
+import EMAILJS_CONFIG from "@/config/emailConfig";
+import Logo from "@/components/Logo";
 
 export default function ProfessorDashboard() {
   const navigate = useNavigate();
@@ -21,12 +25,52 @@ export default function ProfessorDashboard() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Backend ainda não implementa professor/alunos/transações
+    // attempt to load logged professor from localStorage then fetch public data
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.userType === 'professor') {
+          const normalized = {
+            ...parsed,
+            coin_balance: parsed.coinBalance ?? parsed.coin_balance,
+            name: parsed.name ?? parsed.studentName ?? parsed.institutionName ?? parsed.email,
+          };
+          setProfessor(normalized);
+        }
+      } catch (e) {
+        console.warn('Erro ao parsear usuário do localStorage', e);
+      }
+    }
+    // when professor is loaded, fetch students and transactions
   }, []);
+
+  useEffect(() => {
+    if (professor) {
+      loadData();
+    }
+  }, [professor]);
 
   const checkAuth = async () => true;
 
-  const loadData = async () => {};
+  const loadData = async () => {
+    try {
+      // fetch students for the professor's institution
+      const instId = professor?.institutionId ?? professor?.institution_id ?? professor?.institutionId;
+      if (instId) {
+        const studentsResp = await apiService.getStudentsByInstitution(String(instId));
+        setStudents(studentsResp || []);
+      }
+
+      // fetch transactions sent by professor (if we have id)
+      const profId = professor?.id?.toString();
+      const tx = await apiService.getSentTransactions(profId);
+      setTransactions(tx || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar dados do professor', error);
+      toast.error(error.message || 'Erro ao carregar dados');
+    }
+  };
 
   const handleSendCoins = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +82,101 @@ export default function ProfessorDashboard() {
         toast.error("Quantidade deve ser positiva");
         return;
       }
-      toast.info('Envio de moedas não disponível no backend no momento');
+
+      if (!selectedStudent) {
+        toast.error('Selecione um aluno válido');
+        return;
+      }
+
+      // send request to backend (include professor id when available)
+      const profId = professor?.id ? String(professor.id) : null;
+      const res = await apiService.sendCoins(profId, selectedStudent, coinAmount, reason);
+
+      // update local UI: deduct professor balance if present
+      if (profId) {
+        setProfessor((prev: any) => ({ ...prev, coin_balance: (prev.coin_balance ?? prev.coinBalance ?? 0) - coinAmount }));
+      }
+
+      // refresh students and transactions
+      await loadData();
+
+      // send email notifications (best-effort, non-blocking)
+      try {
+        // Ensure we have student's email by fetching details if necessary
+        let studentObj = students.find((s) => String(s.id) === String(selectedStudent));
+        if (!studentObj || !studentObj.email) {
+          try {
+            const fullStudent = await apiService.getStudentById(String(selectedStudent));
+            studentObj = { ...studentObj, ...fullStudent };
+          } catch (e) {
+            console.warn("Não foi possível obter detalhes completos do aluno para email:", e);
+          }
+        }
+        const professorName = professor?.name ?? professor?.email ?? "Professor";
+        const professorEmail = professor?.email ?? "";
+        const studentName = studentObj?.name ?? "Aluno";
+        const studentEmail = studentObj?.email ?? "";
+        const time = new Date().toLocaleString();
+        const mensagemProfessor = `Você enviou ${coinAmount} 🪙 para ${studentName}. Motivo: ${reason}`;
+        const mensagemAluno = `Você recebeu ${coinAmount} 🪙 do(a) ${professorName}. Motivo: ${reason}`;
+
+        // Notificação para o professor (TEMPLATE_ID_FOR_ME)
+        if (EMAILJS_CONFIG.SERVICE_ID1 && EMAILJS_CONFIG.TEMPLATE_ID_PROFESSOR && EMAILJS_CONFIG.PUBLIC_KEY1) {
+          emailjs.send(
+            EMAILJS_CONFIG.SERVICE_ID1,
+            EMAILJS_CONFIG.TEMPLATE_ID_PROFESSOR,
+            {
+              name: professorName,
+              email: professorEmail,
+              message: mensagemProfessor,
+              title: `Confirmação de envio de moedas`,
+              time,
+              aluno_nome: studentName,
+              quantidade: coinAmount,
+              motivo: reason,
+            },
+            EMAILJS_CONFIG.PUBLIC_KEY1
+          ).catch((err) => {
+            console.warn("Falha ao enviar email ao professor:", err);
+          });
+        } else {
+          console.warn("EMAILJS_CONFIG inválida para professor:", EMAILJS_CONFIG);
+        }
+
+        // Confirmação para o aluno (TEMPLATE_ID_FOR_SENDER)
+        if (studentEmail && EMAILJS_CONFIG.SERVICE_ID1 && EMAILJS_CONFIG.TEMPLATE_ID_ALUNO && EMAILJS_CONFIG.PUBLIC_KEY1) {
+          emailjs.send(
+            EMAILJS_CONFIG.SERVICE_ID1,
+            EMAILJS_CONFIG.TEMPLATE_ID_ALUNO,
+            {
+              name: studentName,
+              email: studentEmail,
+              message: mensagemAluno,
+              title: "Você recebeu moedas! 🎉",
+              time,
+              professor_nome: professorName,
+              quantidade: coinAmount,
+              motivo: reason,
+            },
+            EMAILJS_CONFIG.PUBLIC_KEY1
+          ).catch((err) => {
+            console.warn("Falha ao enviar email ao aluno:", err);
+          });
+        } else if (!studentEmail) {
+          console.warn("Aluno sem email, não foi possível enviar confirmação.");
+        } else {
+          console.warn("EMAILJS_CONFIG inválida para aluno:", EMAILJS_CONFIG);
+        }
+      } catch (mailErr) {
+        console.warn("Erro inesperado no envio de emails:", mailErr);
+      }
+
+      toast.success('Moedas enviadas com sucesso');
+      setAmount('');
+      setReason('');
+      setSelectedStudent('');
     } catch (error: any) {
+      console.error('Erro ao enviar moedas', error);
       toast.error(error.message || "Erro ao enviar moedas");
     } finally {
       setLoading(false);
@@ -50,15 +187,27 @@ export default function ProfessorDashboard() {
     navigate("/auth");
   };
 
-  if (!professor) return null;
+  if (!professor) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-lg">Você não está logado como professor.</p>
+          <Button className="mt-4" onClick={() => navigate('/auth')}>Ir para login</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard do Professor</h1>
-            <p className="text-muted-foreground">Olá, {professor.name}</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+            <Logo height={52} className="drop-shadow" />
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold">Dashboard do Professor</h1>
+              <p className="text-muted-foreground">Olá, {professor.name}</p>
+            </div>
           </div>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />
@@ -95,7 +244,7 @@ export default function ProfessorDashboard() {
                   </SelectTrigger>
                   <SelectContent>
                     {students.map((student) => (
-                      <SelectItem key={student.id} value={student.id}>
+                      <SelectItem key={student.id} value={String(student.id)}>
                         {student.name}
                       </SelectItem>
                     ))}
@@ -147,7 +296,7 @@ export default function ProfessorDashboard() {
                 {transactions.map((trans) => (
                   <TableRow key={trans.id}>
                     <TableCell>{new Date(trans.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>{trans.students?.name}</TableCell>
+                    <TableCell>{trans.student?.name}</TableCell>
                     <TableCell>{trans.amount} 🪙</TableCell>
                     <TableCell className="max-w-xs truncate">{trans.reason}</TableCell>
                   </TableRow>
