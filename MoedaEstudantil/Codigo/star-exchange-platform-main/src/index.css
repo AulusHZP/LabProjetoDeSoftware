@@ -2,14 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: "Quantum";
-  src: url("/fonts/Quantum-Regular.otf") format("opentype");
-  font-display: swap;
-  font-weight: 400;
-  font-style: normal;
-}
-
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -54,7 +46,7 @@ All colors MUST be HSL.
     --shadow-card: 0 2px 8px -2px hsl(142 70% 45% / 0.12);
     --shadow-lg: 0 10px 40px -10px hsl(142 70% 45% / 0.2);
 
-    --font-primary: "Quantum", "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-primary: "Quantico", "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   }
 
   .dark {
