@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Coins, LogOut, ShoppingBag, History } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/services/api";
+import emailjs from "@emailjs/browser";
+import EMAILJS_CONFIG from "@/config/emailConfig";
 import Logo from "@/components/Logo";
 
 export default function StudentDashboard() {
@@ -144,7 +146,7 @@ export default function StudentDashboard() {
     }
 
     try {
-      await apiService.redeemAdvantageByStudent({
+      const redemptionResponse = await apiService.redeemAdvantageByStudent({
         advantageId: advantageId,
         studentEmail: student.email,
         studentName: student.name,
@@ -157,6 +159,45 @@ export default function StudentDashboard() {
       // Reload data and refresh history immediately
       await loadData();
       try { await fetchHistoryForStudent(String(student.id)); } catch(e) {}
+
+      // Send email confirmation (best-effort, non-blocking)
+      try {
+        const studentName = student.name ?? "Aluno";
+        const studentEmail = student.email ?? "";
+        const time = new Date().toLocaleString();
+        const redemption = redemptionResponse as any;
+        const advantageTitle = redemption?.title ?? selectedAdvantage?.title ?? "Vantagem";
+        const coinCost = redemption?.coinCost ?? selectedAdvantage?.coinCost ?? 0;
+        const couponCode = redemption?.couponCode ?? "";
+        const mensagemAluno = `Você resgatou a vantagem "${advantageTitle}" por ${coinCost} 🪙. Seu código de cupom é: ${couponCode}`;
+
+        // Confirmação para o aluno (TEMPLATE_ID_VANTAGEM)
+        if (studentEmail && EMAILJS_CONFIG.SERVICE_ID2 && EMAILJS_CONFIG.TEMPLATE_ID_VANTAGEM && EMAILJS_CONFIG.PUBLIC_KEY2) {
+          emailjs.send(
+            EMAILJS_CONFIG.SERVICE_ID2,
+            EMAILJS_CONFIG.TEMPLATE_ID_VANTAGEM,
+            {
+              name: studentName,
+              email: studentEmail,
+              message: mensagemAluno,
+              title: "Vantagem resgatada com sucesso! 🎉",
+              time,
+              vantagem_titulo: advantageTitle,
+              quantidade: coinCost,
+              cupom: couponCode,
+            },
+            EMAILJS_CONFIG.PUBLIC_KEY2
+          ).catch((err) => {
+            console.warn("Falha ao enviar email ao aluno:", err);
+          });
+        } else if (!studentEmail) {
+          console.warn("Aluno sem email, não foi possível enviar confirmação.");
+        } else {
+          console.warn("EMAILJS_CONFIG inválida para vantagem:", EMAILJS_CONFIG);
+        }
+      } catch (mailErr) {
+        console.warn("Erro inesperado no envio de email:", mailErr);
+      }
     } catch (error: any) {
       toast.error(error.message || "Erro ao resgatar vantagem");
     }
@@ -221,13 +262,15 @@ export default function StudentDashboard() {
 
           <TabsContent value="advantages" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {advantages.map((advantage) => (
+              {advantages.map((advantage) => {
+                const photoUrl = advantage.photoUrl || advantage.photo_url;
+                return (
                 <Card key={advantage.id} className="shadow-card hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    {advantage.photoUrl && (
+                    {photoUrl && (
                       <div className="w-full h-40 mb-4 overflow-hidden rounded-md">
                         <img
-                          src={advantage.photoUrl}
+                          src={photoUrl}
                           alt={advantage.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -258,7 +301,8 @@ export default function StudentDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           </TabsContent>
 

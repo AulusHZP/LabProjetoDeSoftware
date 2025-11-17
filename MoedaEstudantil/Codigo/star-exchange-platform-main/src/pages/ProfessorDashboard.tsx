@@ -121,9 +121,9 @@ export default function ProfessorDashboard() {
         const mensagemAluno = `Você recebeu ${coinAmount} 🪙 do(a) ${professorName}. Motivo: ${reason}`;
 
         // Notificação para o professor (TEMPLATE_ID_FOR_ME)
-        if (EMAILJS_CONFIG.SERVICE_ID && EMAILJS_CONFIG.TEMPLATE_ID_PROFESSOR && EMAILJS_CONFIG.PUBLIC_KEY) {
+        if (EMAILJS_CONFIG.SERVICE_ID1 && EMAILJS_CONFIG.TEMPLATE_ID_PROFESSOR && EMAILJS_CONFIG.PUBLIC_KEY1) {
           emailjs.send(
-            EMAILJS_CONFIG.SERVICE_ID,
+            EMAILJS_CONFIG.SERVICE_ID1,
             EMAILJS_CONFIG.TEMPLATE_ID_PROFESSOR,
             {
               name: professorName,
@@ -135,7 +135,7 @@ export default function ProfessorDashboard() {
               quantidade: coinAmount,
               motivo: reason,
             },
-            EMAILJS_CONFIG.PUBLIC_KEY
+            EMAILJS_CONFIG.PUBLIC_KEY1
           ).catch((err) => {
             console.warn("Falha ao enviar email ao professor:", err);
           });
@@ -144,9 +144,9 @@ export default function ProfessorDashboard() {
         }
 
         // Confirmação para o aluno (TEMPLATE_ID_FOR_SENDER)
-        if (studentEmail && EMAILJS_CONFIG.SERVICE_ID && EMAILJS_CONFIG.TEMPLATE_ID_ALUNO && EMAILJS_CONFIG.PUBLIC_KEY) {
+        if (studentEmail && EMAILJS_CONFIG.SERVICE_ID1 && EMAILJS_CONFIG.TEMPLATE_ID_ALUNO && EMAILJS_CONFIG.PUBLIC_KEY1) {
           emailjs.send(
-            EMAILJS_CONFIG.SERVICE_ID,
+            EMAILJS_CONFIG.SERVICE_ID1,
             EMAILJS_CONFIG.TEMPLATE_ID_ALUNO,
             {
               name: studentName,
@@ -158,7 +158,7 @@ export default function ProfessorDashboard() {
               quantidade: coinAmount,
               motivo: reason,
             },
-            EMAILJS_CONFIG.PUBLIC_KEY
+            EMAILJS_CONFIG.PUBLIC_KEY1
           ).catch((err) => {
             console.warn("Falha ao enviar email ao aluno:", err);
           });

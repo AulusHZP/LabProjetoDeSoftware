@@ -105,9 +105,9 @@ export default function CompanyDashboard() {
     setFormData({
       title: advantage.title || "",
       description: advantage.description || "",
-      photoUrl: advantage.photo_url || "",
-      coinCost: advantage.coin_cost ? advantage.coin_cost.toString() : "",
-      maxRedemptions: advantage.max_redemptions ? advantage.max_redemptions.toString() : "10",
+      photoUrl: advantage.photoUrl || advantage.photo_url || "",
+      coinCost: advantage.coinCost || advantage.coin_cost ? (advantage.coinCost || advantage.coin_cost).toString() : "",
+      maxRedemptions: advantage.maxRedemptions || advantage.max_redemptions ? (advantage.maxRedemptions || advantage.max_redemptions).toString() : "10",
     });
     setIsDialogOpen(true);
   };
