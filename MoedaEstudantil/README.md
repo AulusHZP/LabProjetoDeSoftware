@@ -4,6 +4,40 @@
 
 Sistema completo de moedas virtuais para reconhecimento estudantil desenvolvido com **Spring Boot** e **React**. Professores podem distribuir moedas para alunos por bom desempenho, e os alunos podem trocar essas moedas por vantagens oferecidas por empresas parceiras.
 
+## 📊 Diagramas e Arquitetura
+
+### Diagrama de Casos de Uso
+![Diagrama de Casos de Uso](Documentação/diagramaCasosDeUso.jpg)
+
+O diagrama de casos de uso ilustra as principais interações entre os atores do sistema (Aluno, Professor, Empresa) e suas funcionalidades.
+
+### Diagrama de Classes
+![Diagrama de Classes](Documentação/diagramaClasse.jpg)
+
+Estrutura completa das classes do sistema, demonstrando as entidades principais, seus atributos e relacionamentos.
+
+### Diagrama de Componentes
+![Diagrama de Componentes](Documentação/diagramaComponentes.jpg)
+
+Arquitetura do sistema mostrando a separação entre frontend (React), backend (Spring Boot), banco de dados (PostgreSQL) e serviços externos.
+
+### Diagrama Entidade-Relacionamento (ER)
+![Diagrama ER](Documentação/diagramaER.jpg)
+
+Modelo de dados completo mostrando todas as tabelas, chaves primárias, estrangeiras e cardinalidades.
+
+### Diagramas de Sequência
+
+#### Sequência de Login
+![Diagrama de Sequência - Login](Documentação/diagramaDeSequenciaLogin.png)
+
+Fluxo detalhado do processo de autenticação, desde a entrada de credenciais até a geração do token JWT.
+
+#### Sequência de Resgate de Vantagem
+![Diagrama de Sequência - Vantagem](Documentação/diagramaDeSequenciaVantagem.png)
+
+Fluxo completo do resgate de vantagens, incluindo validações, atualização de saldo, geração de cupom e notificações por email.
+
 ## 🎯 Funcionalidades
 
 ### Para Alunos
@@ -131,22 +165,27 @@ O frontend estará disponível em: `http://localhost:5173`
 
 ## 🗄️ Estrutura do Banco de Dados
 
+### Diagrama ER - Visão Geral
+![Diagrama Entidade-Relacionamento](Documentação/diagramaER.jpg)
+
 ### Tabelas Principais
-- `institutions` - Instituições de ensino
-- `profiles` - Perfis de usuários
-- `students` - Dados dos alunos
-- `professors` - Dados dos professores
-- `companies` - Dados das empresas
-- `advantages` - Vantagens oferecidas
-- `transactions` - Transações de moedas
-- `redemptions` - Resgates de vantagens
+- **`institutions`** - Instituições de ensino (PUC Minas, UFMG, etc.)
+- **`profiles`** - Perfis de usuários (base para todos os tipos)
+- **`students`** - Dados específicos dos alunos (RG, endereço, curso)
+- **`professors`** - Dados específicos dos professores (CPF, departamento)
+- **`companies`** - Dados das empresas parceiras
+- **`advantages`** - Vantagens/ofertas disponíveis
+- **`transactions`** - Histórico de transferências de moedas
+- **`redemptions`** - Histórico de resgates de vantagens
 
 ### Relacionamentos
-- Um perfil pode ser aluno, professor ou empresa
-- Alunos e professores pertencem a uma instituição
-- Transações conectam professores e alunos
-- Resgates conectam alunos e vantagens
-- Vantagens pertencem a empresas
+- **Profile → Institution**: Um perfil pode estar vinculado a uma instituição (1:N)
+- **Student → Profile**: Herança - cada estudante é um perfil (1:1)
+- **Professor → Profile**: Herança - cada professor é um perfil (1:1)
+- **Company → Profile**: Herança - cada empresa é um perfil (1:1)
+- **Transaction**: Professor envia moedas para Aluno (N:1:1)
+- **Redemption**: Aluno resgata Vantagem (N:1:1)
+- **Advantage → Company**: Vantagens pertencem a empresas (N:1)
 
 ## 🔧 Configuração
 
@@ -179,27 +218,41 @@ VITE_API_URL=http://localhost:8080/api
 
 ## 📁 Estrutura do Projeto
 
+### Arquitetura de Componentes
+![Diagrama de Componentes](Documentação/diagramaComponentes.jpg)
+
+### Organização de Diretórios
+
 ```
 MoedaEstudantil/
-├── Backend/                     # Spring Boot Backend
+├── Backend/                     # Spring Boot Backend (API REST)
 │   ├── src/main/java/com/moedaestudantil/
-│   │   ├── controller/          # Controllers REST
+│   │   ├── controller/          # Controllers REST (endpoints da API)
 │   │   ├── service/            # Lógica de negócio
-│   │   ├── repository/         # Repositórios JPA
-│   │   ├── model/              # Entidades
-│   │   ├── dto/                # DTOs
-│   │   ├── config/             # Configurações
-│   │   └── security/           # Segurança
-│   ├── database_schema.sql     # Schema do banco
-│   └── pom.xml                 # Dependências Maven
-├── Codigo/star-exchange-platform-main/  # Frontend React
+│   │   ├── repository/         # Repositórios JPA (acesso ao BD)
+│   │   ├── model/              # Entidades JPA
+│   │   ├── dto/                # Data Transfer Objects
+│   │   ├── config/             # Configurações (CORS, Security)
+│   │   └── security/           # JWT, autenticação
+│   ├── database_schema.sql     # Schema completo do PostgreSQL
+│   ├── pom.xml                 # Dependências Maven
+│   └── run-backend.bat/ps1     # Scripts de execução
+├── Codigo/star-exchange-platform-main/  # Frontend React + TypeScript
 │   ├── src/
-│   │   ├── components/          # Componentes React
-│   │   ├── pages/              # Páginas
-│   │   ├── services/           # Serviços API
-│   │   └── hooks/              # Hooks customizados
-│   └── package.json            # Dependências NPM
-└── Documentacao/               # Diagramas UML
+│   │   ├── components/          # Componentes reutilizáveis (UI)
+│   │   ├── pages/              # Páginas da aplicação
+│   │   ├── services/           # Chamadas à API
+│   │   ├── hooks/              # Hooks customizados
+│   │   └── config/             # Configurações do frontend
+│   ├── package.json            # Dependências NPM
+│   └── vite.config.ts          # Configuração Vite
+└── Documentação/               # Documentação técnica
+    ├── diagramaCasosDeUso.jpg      # Casos de uso
+    ├── diagramaClasse.jpg          # Diagrama de classes
+    ├── diagramaComponentes.jpg     # Arquitetura de componentes
+    ├── diagramaER.jpg              # Modelo de dados
+    ├── diagramaDeSequenciaLogin.png        # Fluxo de login
+    └── diagramaDeSequenciaVantagem.png     # Fluxo de resgate
 ```
 
 ## 🔐 Segurança
@@ -225,19 +278,57 @@ O schema inclui dados de exemplo:
   - Senha: `password123`
   - Tipo: Aluno
 
-## 📝 Próximos Passos
 
-- [ ] Implementar refresh automático de moedas para professores
-- [ ] Adicionar sistema de notificações em tempo real
-- [ ] Implementar upload de imagens para vantagens
-- [ ] Adicionar relatórios e analytics
-- [ ] Implementar testes automatizados
-- [ ] Adicionar documentação Swagger/OpenAPI
+## 📚 Documentação Adicional
+
+### Diagramas UML Disponíveis
+
+Todos os diagramas estão localizados na pasta `Documentação/`:
+
+1. **Casos de Uso** (`diagramaCasosDeUso.jpg`) - Interações entre atores e funcionalidades
+2. **Classes** (`diagramaClasse.jpg`) - Estrutura orientada a objetos
+3. **Componentes** (`diagramaComponentes.jpg`) - Arquitetura do sistema
+4. **ER** (`diagramaER.jpg`) - Modelo de dados relacional
+5. **Sequência - Login** (`diagramaDeSequenciaLogin.png`) - Fluxo de autenticação
+6. **Sequência - Vantagem** (`diagramaDeSequenciaVantagem.png`) - Fluxo de resgate
+
+### Fluxos Principais
+
+#### Fluxo de Autenticação (Login)
+1. Usuário envia credenciais (email/senha)
+2. Backend valida no banco de dados
+3. Sistema gera token JWT
+4. Frontend armazena token
+5. Requisições subsequentes incluem token no header
+
+#### Fluxo de Envio de Moedas (Professor → Aluno)
+1. Professor seleciona aluno e valor
+2. Sistema valida saldo do professor
+3. Debita moedas do professor
+4. Credita moedas ao aluno
+5. Registra transação no histórico
+6. Atualiza saldos em tempo real
+
+#### Fluxo de Resgate de Vantagem (Aluno)
+1. Aluno navega no catálogo de vantagens
+2. Seleciona vantagem desejada
+3. Sistema valida saldo do aluno
+4. Debita moedas do aluno
+5. Gera código de cupom único
+6. Envia email ao aluno com cupom
+7. Notifica empresa parceira
+8. Registra resgate no histórico
 
 ## 👥 Autores
 
-Desenvolvido como parte do projeto de Laboratório de Projeto de Software.
+Desenvolvido como parte do projeto de **Laboratório de Projeto de Software**.
 
 ---
 
-**Backend Spring Boot** substituindo completamente o Supabase com todas as funcionalidades mantidas e melhoradas!
+## 📄 Licença
+
+Este projeto foi desenvolvido para fins acadêmicos.
+
+---
+
+**Sistema completo com Backend Spring Boot** substituindo Supabase, com todas as funcionalidades mantidas e melhoradas! 🚀
