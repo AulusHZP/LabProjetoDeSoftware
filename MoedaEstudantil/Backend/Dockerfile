@@ -1,5 +1,5 @@
 # Usando uma imagem base do OpenJDK (Java 17)
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk
 
 # Definindo o diretório de trabalho dentro do container
 WORKDIR /MoedaEstudantil/Backend
